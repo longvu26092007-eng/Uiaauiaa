@@ -99,18 +99,14 @@ local function GetWeaponMastery(weaponName)
     return masteryValue
 end
 
--- Module kiểm tra thông minh: Chỉ Kick nếu đạt mốc 500 khi đang farm
 task.spawn(function()
-    -- Chờ có vũ khí để kiểm tra chỉ số ban đầu
     repeat task.wait(1) until CheckDragonTalon()
     local initialMastery = GetWeaponMastery("Dragon Talon")
     
-    -- Nếu ngay khi vào game đã >= 500 thì dừng Module Kick luôn để không bị lặp
     if initialMastery >= 500 then
         return 
     end
 
-    -- Nếu vào game mà chưa đủ 500, bắt đầu theo dõi quá trình tăng trưởng
     while task.wait(3) do
         local currentMastery = GetWeaponMastery("Dragon Talon")
         if currentMastery >= 500 then
@@ -260,6 +256,8 @@ task.spawn(function()
         ActionStatus.Text = "Hành động: Đang khởi tạo Banana Hub..."
         task.wait(3)
         
+        -- PHẦN CHỈNH SỬA LỖI THEO YÊU CẦU:
+        repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer 
         getgenv().Key = "51e126ee832d3c4fff7b6178" 
         getgenv().NewUI = true
         
@@ -274,15 +272,16 @@ task.spawn(function()
                 ["Start Farm"] = false,
                 ["Auto Quest Dojo Trainer"] = true,
                 ["Select Zone"] = "Zone 6",
-                ["Select Boat"] = "Brigade"
+                ["Select Boat"] = "Brigade",
                 ["Select Sea Events"] = {
-                         ["Shark"] = true,
-                         ["Terrorshark"] = true,
-                         ["Piranha"] = true,
-                         ["Ship"] = true,
-                    }
+                    ["Shark"] = true,
+                    ["Terrorshark"] = true,
+                    ["Piranha"] = true,
+                    ["Ship"] = true
+                }
             }
         end
+        
         loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
         ActionStatus.Text = "Hành động: Banana Hub đã load xong!"
     end
