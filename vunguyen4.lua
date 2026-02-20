@@ -1,15 +1,33 @@
 -- ==========================================
 -- [ PHẦN 0 : CHỌN TEAM & ĐỢI GAME LOAD ]
 -- ==========================================
-if not game:IsLoaded() then
-    game.Loaded:Wait()
+repeat task.wait() until game:IsLoaded()
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+
+-- Đợi PlayerGui load để có thể thao tác ẩn bảng Chọn Team
+repeat task.wait(0.5) until LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.PlayerGui:FindFirstChild("Main")
+
+-- Logic Auto Join Team Marines (Lặp liên tục và chống kẹt UI)
+if LocalPlayer.Team == nil then
+    task.spawn(function()
+        while LocalPlayer.Team == nil do
+            pcall(function()
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", "Marines")
+                
+                local chooseTeam = LocalPlayer.PlayerGui.Main:FindFirstChild("ChooseTeam")
+                if chooseTeam then
+                    chooseTeam.Visible = false
+                end
+            end)
+            task.wait(1)
+        end
+    end)
 end
 
-pcall(function()
-    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", "Marines")
-end)
-
-task.wait(4)
+-- Đợi nhân vật thực sự xuất hiện trong map
+repeat task.wait() until LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+task.wait(2)
 
 -- ==========================================
 -- [ PHẦN 1 : DRGTL ] LÕI LOGIC (CORE)
