@@ -7,18 +7,14 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- Luồng spam detect và chọn team chuẩn cho đến khi thành công
 task.spawn(function()
     local Player = game.Players.LocalPlayer
     while task.wait(0.5) do
         if Player.Team ~= nil then
-            break -- Đã chọn được team thành công, dừng vòng lặp
+            break 
         end
         pcall(function()
-            -- Gửi lệnh chọn phe lên Server
             game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", getgenv().Team)
-            
-            -- Tắt bảng ChooseTeam nếu nó đang hiện để tránh kẹt giao diện
             if Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("Main") then
                 local chooseTeamUI = Player.PlayerGui.Main:FindFirstChild("ChooseTeam")
                 if chooseTeamUI then
@@ -29,7 +25,6 @@ task.spawn(function()
     end
 end)
 
--- Đợi nhân vật spawn hoàn tất trước khi chạy tiếp các phần sau
 repeat task.wait() until game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 task.wait(2)
 
@@ -91,17 +86,18 @@ local function TweenTo(targetCFrame)
 end
 
 -- ==========================================
--- [ PHẦN 2 : Check Mastery Dragon Talon ]
+-- [ PHẦN 2 : Check Mastery Dragon Talon ] -> ĐÃ SỬA LỖI CẬP NHẬT
 -- ==========================================
 local function GetWeaponMastery(weaponName)
-    local character = Player.Character
-    local backpack = Player:WaitForChild("Backpack")
+    local masteryValue = 0
+    local p = game.Players.LocalPlayer
+    -- Kiểm tra cả trong túi đồ và trên tay nhân vật
+    local item = p.Backpack:FindFirstChild(weaponName) or (p.Character and p.Character:FindFirstChild(weaponName))
     
-    local item = (character and character:FindFirstChild(weaponName)) or (backpack and backpack:FindFirstChild(weaponName))
     if item and item:FindFirstChild("Level") then
-        return item.Level.Value
+        masteryValue = item.Level.Value
     end
-    return 0 
+    return masteryValue
 end
 
 -- ==========================================
@@ -185,7 +181,7 @@ MasteryLabel.TextSize = 13
 MasteryLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- ==========================================
--- [ PHẦN 4 ] MAIN AUTO LOGIC (VÒNG LẶP CHÍNH)
+-- [ PHẦN 4 ] MAIN AUTO LOGIC -> ĐÃ SỬA LỖI LUỒNG LẶP
 -- ==========================================
 
 TPTradeBtn.MouseButton1Click:Connect(function()
@@ -198,89 +194,69 @@ TPTradeBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- 1. LUỒNG AUTO LẤY VŨ KHÍ (DRGTL)
+-- 1. LUỒNG CẬP NHẬT UI MASTERY (LUÔN CHẠY)
+task.spawn(function()
+    while true do
+        if CheckDragonTalon() then
+            local currentMastery = GetWeaponMastery("Dragon Talon")
+            MasteryLabel.Text = "Mastery: " .. currentMastery .. "/500"
+            if currentMastery >= 500 then
+                MasteryLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+            else
+                MasteryLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+            end
+        else
+            MasteryLabel.Text = "Mastery: Đang đợi lấy vũ khí..."
+            MasteryLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+        end
+        task.wait(1) -- Cập nhật mỗi 1 giây
+    end
+end)
+
+-- 2. LUỒNG AUTO LẤY VŨ KHÍ
 task.spawn(function()
     while true do
         if CheckDragonTalon() then
             SpawnLabel.Text = "Dragon Talon: Đã sở hữu"
             SpawnLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-            ActionStatus.Text = "Hành động: Hoàn tất lấy vũ khí, đang tập trung Farm!"
             break 
         else
             SpawnLabel.Text = "Dragon Talon: Chưa có"
             SpawnLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-            
-            ActionStatus.Text = "Hành động: Đang bay đến NPC Uzoth..."
+            ActionStatus.Text = "Hành động: Đang bay đến mua Dragon Talon..."
             TweenTo(Uzoth_CFrame)
-            task.wait(0.5)
-            
-            ActionStatus.Text = "Hành động: Đang gửi lệnh mua..."
-            local args = {[1] = "BuyDragonTalon"}
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
-            
-            for i = 1, 120 do
-                ActionStatus.Text = "Hành động: Đợi mua thành công... (" .. (120 - i) .. "s trước khi thử lại)"
-                if CheckDragonTalon() then 
-                    break 
-                end
-                task.wait(1)
-            end
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("BuyDragonTalon")
         end
+        task.wait(5)
     end
 end)
 
--- 2. LUỒNG CHECK MASTERY & CHẠY BANANA HUB
-local bananaHubLoaded = false
-
+-- 3. LUỒNG LOAD BANANA HUB (CHẠY 1 LẦN KHI ĐỦ ĐIỀU KIỆN)
+local hubLoaded = false
 task.spawn(function()
-    while not bananaHubLoaded do
-        if CheckDragonTalon() then
-            local currentMastery = GetWeaponMastery("Dragon Talon")
-            MasteryLabel.Text = "Mastery: " .. currentMastery .. "/500"
-            
-            if currentMastery >= 500 then
-                MasteryLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-                ActionStatus.Text = "Hành động: Delay 3s chuẩn bị chạy Auto Dojo..."
-            else
-                MasteryLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-                ActionStatus.Text = "Hành động: Delay 3s chuẩn bị chạy Farm Bones..."
-            end
-            
-            -- Đợi 3 giây sau khi check Mastery thành công
-            task.wait(3)
-            
-            -- Chạy kịch bản dựa trên mốc 500 Mastery
-            if currentMastery < 500 then
-                repeat wait() until game:IsLoaded() and game.Players.LocalPlayer 
-                getgenv().Key = "51e126ee832d3c4fff7b6178" 
-                getgenv().NewUI = true
-                getgenv().Config = {
-                    ["Select Method Farm"] = "Farm Bones",
-                    ["Start Farm"] = true
-                }
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
-            else
-                repeat wait() until game:IsLoaded() and game.Players.LocalPlayer 
-                getgenv().Key = "51e126ee832d3c4fff7b6178" 
-                getgenv().NewUI = true
-                getgenv().Config = {
-                    ["Select Method Farm"] = "Farm Bones",
-                    ["Start Farm"] = false,
-                    ["Auto Quest Dojo Trainer"] = true
-                }
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
-            end
-            
-            -- Cờ đánh dấu đã load xong để dừng vòng lặp vô hạn
-            bananaHubLoaded = true
-            break 
-            
-        else
-            MasteryLabel.Text = "Mastery: Đang đi lấy vũ khí..."
-            MasteryLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-        end
+    repeat task.wait(1) until CheckDragonTalon()
+    if not hubLoaded then
+        hubLoaded = true
+        local currentMastery = GetWeaponMastery("Dragon Talon")
+        ActionStatus.Text = "Hành động: Đang khởi tạo Banana Hub..."
+        task.wait(3)
         
-        -- Cứ 2 giây sẽ check lại một lần xem có Dragon Talon chưa
-        task.wait(2)
+        getgenv().Key = "51e126ee832d3c4fff7b6178" 
+        getgenv().NewUI = true
+        
+        if currentMastery < 500 then
+            getgenv().Config = {
+                ["Select Method Farm"] = "Farm Bones",
+                ["Start Farm"] = true
+            }
+        else
+            getgenv().Config = {
+                ["Select Method Farm"] = "Farm Bones",
+                ["Start Farm"] = false,
+                ["Auto Quest Dojo Trainer"] = true
+            }
+        end
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
+        ActionStatus.Text = "Hành động: Banana Hub đã load xong!"
     end
 end)
