@@ -8,29 +8,32 @@ local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 -- Chờ cho đến khi GUI chính của game thực sự sẵn sàng
 repeat task.wait(0.5) until LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.PlayerGui:FindFirstChild("Main")
 
--- Detect và tự động chọn Team Marines nếu tài khoản chưa có team
+-- Auto Detect và Join Team Marines (Logic tối ưu từ Github)
 if LocalPlayer.Team == nil then
-    while LocalPlayer.Team == nil do
-        pcall(function()
-            -- Gửi lệnh chọn Hải Quân
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", "Marines")
-            
-            -- Tắt hẳn bảng chọn team mặc định của game để tránh kẹt UI
-            if LocalPlayer.PlayerGui.Main:FindFirstChild("ChooseTeam") then
-                LocalPlayer.PlayerGui.Main.ChooseTeam.Visible = false
-            end
-        end)
-        task.wait(1) -- Delay 1s mỗi lần thử để tránh spam request lên server
-    end
+    task.spawn(function()
+        while LocalPlayer.Team == nil do
+            pcall(function()
+                -- Gửi lệnh chọn Hải Quân
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", "Marines")
+                
+                -- Tắt bảng ChooseTeam nếu nó đang hiện để không bị cản tầm nhìn
+                if LocalPlayer.PlayerGui.Main:FindFirstChild("ChooseTeam") then
+                    LocalPlayer.PlayerGui.Main.ChooseTeam.Visible = false
+                end
+            end)
+            task.wait(1) -- Thử lại sau mỗi giây nếu chưa vào được team
+        end
+    end)
 end
 
--- Đợi 4 giây cho nhân vật rớt hẳn xuống map và load xong các part xung quanh
-task.wait(4)
+-- Đợi nhân vật thực sự xuất hiện trong Map
+repeat task.wait() until LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+task.wait(3) -- Delay an toàn để tránh lỗi Tween ngay khi vừa spawn
 
 -- ==========================================
 -- [ PHẦN 1 : DRGTL ] LÕI LOGIC (CORE)
 -- ==========================================
-local Player = game.Players.LocalPlayer
+local Player = LocalPlayer
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -243,7 +246,6 @@ task.spawn(function()
             task.wait(3)
             
             if currentMastery < 500 then
-                repeat wait() until game:IsLoaded() and game.Players.LocalPlayer 
                 getgenv().Key = "51e126ee832d3c4fff7b6178" 
                 getgenv().NewUI = true
                 getgenv().Config = {
@@ -252,7 +254,6 @@ task.spawn(function()
                 }
                 loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
             else
-                repeat wait() until game:IsLoaded() and game.Players.LocalPlayer 
                 getgenv().Key = "51e126ee832d3c4fff7b6178" 
                 getgenv().NewUI = true
                 getgenv().Config = {
@@ -270,7 +271,6 @@ task.spawn(function()
             MasteryLabel.Text = "Mastery: Đang đi lấy vũ khí..."
             MasteryLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
         end
-        
         task.wait(2)
     end
 end)
