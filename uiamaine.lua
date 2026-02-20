@@ -1,4 +1,20 @@
 -- ==========================================
+-- [ PHẦN 0 : CHỌN TEAM & ĐỢI GAME LOAD ]
+-- ==========================================
+-- Đợi game tải xong hoàn toàn
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+-- Tự động chọn team Marines
+pcall(function()
+    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", "Marines")
+end)
+
+-- Delay 4 giây trước khi load các chức năng tiếp theo
+task.wait(4)
+
+-- ==========================================
 -- [ PHẦN 1 : DRGTL ] LÕI LOGIC (CORE)
 -- ==========================================
 local Player = game.Players.LocalPlayer
