@@ -1,17 +1,14 @@
 -- ==========================================
 -- [ PHẦN 0 : CHỌN TEAM & ĐỢI GAME LOAD ]
 -- ==========================================
--- Đợi game tải xong hoàn toàn
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- Tự động chọn team Marines
 pcall(function()
     game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", "Marines")
 end)
 
--- Delay 4 giây trước khi load các chức năng tiếp theo
 task.wait(4)
 
 -- ==========================================
@@ -23,7 +20,6 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 
 local Uzoth_CFrame = CFrame.new(5661.898, 1210.877, 863.176)
--- Tọa độ Bàn Trade (TradeTable)
 local Trade_CFrame = CFrame.new(-12596.668, 336.671, -7556.832)
 
 local function CheckDragonTalon()
@@ -86,7 +82,6 @@ local function GetWeaponMastery(weaponName)
     return 0 
 end
 
-
 -- ==========================================
 -- [ PHẦN 3 ] GIAO DIỆN MONITOR (VÀNG - ĐEN)
 -- ==========================================
@@ -122,10 +117,9 @@ Line.Position = UDim2.new(0, 0, 1, 0)
 Line.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
 Line.BorderSizePixel = 0
 
--- NÚT TP TRADE GÓC TRÊN BÊN PHẢI
 local TPTradeBtn = Instance.new("TextButton", MainFrame)
 TPTradeBtn.Size = UDim2.new(0, 70, 0, 25)
-TPTradeBtn.Position = UDim2.new(1, -75, 0, 5) -- Đặt ở góc phải trên cùng
+TPTradeBtn.Position = UDim2.new(1, -75, 0, 5)
 TPTradeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 TPTradeBtn.Text = "TP Trade"
 TPTradeBtn.TextColor3 = Color3.fromRGB(255, 200, 0)
@@ -134,7 +128,6 @@ TPTradeBtn.TextSize = 12
 Instance.new("UICorner", TPTradeBtn).CornerRadius = UDim.new(0, 4)
 Instance.new("UIStroke", TPTradeBtn).Color = Color3.fromRGB(255, 200, 0)
 
--- Bảng thông tin (Mở rộng ra toàn bộ chiều ngang do đã bỏ nút lớn)
 local InfoPanel = Instance.new("Frame", MainFrame)
 InfoPanel.Size = UDim2.new(1, -20, 1, -50)
 InfoPanel.Position = UDim2.new(0, 10, 0, 40)
@@ -169,12 +162,10 @@ MasteryLabel.BackgroundTransparency = 1
 MasteryLabel.TextSize = 13
 MasteryLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-
 -- ==========================================
 -- [ PHẦN 4 ] MAIN AUTO LOGIC (VÒNG LẶP CHÍNH)
 -- ==========================================
 
--- SỰ KIỆN BẤM NÚT TP TRADE
 TPTradeBtn.MouseButton1Click:Connect(function()
     task.spawn(function()
         ActionStatus.Text = "Hành động: Đang bay đến bàn Trade..."
@@ -192,8 +183,6 @@ task.spawn(function()
             SpawnLabel.Text = "Dragon Talon: Đã sở hữu"
             SpawnLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
             ActionStatus.Text = "Hành động: Hoàn tất lấy vũ khí, đang tập trung Farm!"
-            
-            -- LỆNH BREAK: Thoát hoàn toàn khỏi vòng lặp bay, không bao giờ check lại việc lấy vũ khí nữa
             break 
         else
             SpawnLabel.Text = "Dragon Talon: Chưa có"
@@ -207,10 +196,8 @@ task.spawn(function()
             local args = {[1] = "BuyDragonTalon"}
             game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
             
-            -- Vòng lặp chờ thông minh 120 giây (Smart Timeout)
             for i = 1, 120 do
                 ActionStatus.Text = "Hành động: Đợi mua thành công... (" .. (120 - i) .. "s trước khi thử lại)"
-                -- Nếu trong lúc đang đếm ngược mà mua được rồi -> Thoát vòng đếm ngược sớm
                 if CheckDragonTalon() then 
                     break 
                 end
@@ -220,22 +207,58 @@ task.spawn(function()
     end
 end)
 
--- 2. LUỒNG AUTO QUÉT MASTERY CHẠY NGẦM (MỖI 10 GIÂY)
+-- 2. LUỒNG CHECK MASTERY & CHẠY BANANA HUB
+local bananaHubLoaded = false
+
 task.spawn(function()
-    while true do
+    while not bananaHubLoaded do
         if CheckDragonTalon() then
             local currentMastery = GetWeaponMastery("Dragon Talon")
             MasteryLabel.Text = "Mastery: " .. currentMastery .. "/500"
             
             if currentMastery >= 500 then
                 MasteryLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                ActionStatus.Text = "Hành động: Delay 3s chuẩn bị chạy Auto Dojo..."
             else
                 MasteryLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+                ActionStatus.Text = "Hành động: Delay 3s chuẩn bị chạy Farm Bones..."
             end
+            
+            -- Đợi 3 giây sau khi check Mastery thành công
+            task.wait(3)
+            
+            -- Chạy kịch bản dựa trên mốc 500 Mastery
+            if currentMastery < 500 then
+                repeat wait() until game:IsLoaded() and game.Players.LocalPlayer 
+                getgenv().Key = "51e126ee832d3c4fff7b6178" 
+                getgenv().NewUI = true
+                getgenv().Config = {
+                    ["Select Method Farm"] = "Farm Bones",
+                    ["Start Farm"] = true
+                }
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
+            else
+                repeat wait() until game:IsLoaded() and game.Players.LocalPlayer 
+                getgenv().Key = "51e126ee832d3c4fff7b6178" 
+                getgenv().NewUI = true
+                getgenv().Config = {
+                    ["Select Method Farm"] = "Farm Bones",
+                    ["Start Farm"] = false,
+                    ["Auto Quest Dojo Trainer"] = true
+                }
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
+            end
+            
+            -- Cờ đánh dấu đã load xong để dừng vòng lặp vô hạn
+            bananaHubLoaded = true
+            break 
+            
         else
             MasteryLabel.Text = "Mastery: Đang đi lấy vũ khí..."
             MasteryLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
         end
-        task.wait(10)
+        
+        -- Cứ 2 giây sẽ check lại một lần xem có Dragon Talon chưa
+        task.wait(2)
     end
 end)
