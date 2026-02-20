@@ -5,30 +5,30 @@ repeat task.wait() until game:IsLoaded()
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 
--- Chờ cho đến khi GUI chính của game thực sự sẵn sàng
+-- Đợi cho đến khi PlayerGui và Main GUI thực sự sẵn sàng
 repeat task.wait(0.5) until LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.PlayerGui:FindFirstChild("Main")
 
--- Auto Detect và Join Team Marines (Logic tối ưu từ Github)
+-- Auto Join Team Marines (Logic tối ưu tránh kẹt UI)
 if LocalPlayer.Team == nil then
     task.spawn(function()
         while LocalPlayer.Team == nil do
             pcall(function()
-                -- Gửi lệnh chọn Hải Quân
+                -- Gửi lệnh chọn phe Hải Quân
                 game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", "Marines")
                 
-                -- Tắt bảng ChooseTeam nếu nó đang hiện để không bị cản tầm nhìn
+                -- Tắt bảng chọn phe mặc định để tránh cản trở script
                 if LocalPlayer.PlayerGui.Main:FindFirstChild("ChooseTeam") then
                     LocalPlayer.PlayerGui.Main.ChooseTeam.Visible = false
                 end
             end)
-            task.wait(1) -- Thử lại sau mỗi giây nếu chưa vào được team
+            task.wait(1)
         end
     end)
 end
 
--- Đợi nhân vật thực sự xuất hiện trong Map
+-- Đợi nhân vật spawn hoàn tất
 repeat task.wait() until LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-task.wait(3) -- Delay an toàn để tránh lỗi Tween ngay khi vừa spawn
+task.wait(2)
 
 -- ==========================================
 -- [ PHẦN 1 : DRGTL ] LÕI LOGIC (CORE)
@@ -215,8 +215,8 @@ task.spawn(function()
             local args = {[1] = "BuyDragonTalon"}
             game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
             
-            for i = 1, 120 do
-                ActionStatus.Text = "Hành động: Đợi mua thành công... (" .. (120 - i) .. "s trước khi thử lại)"
+            for i = 1, 60 do
+                ActionStatus.Text = "Hành động: Đợi mua thành công... (" .. (60 - i) .. "s trước khi thử lại)"
                 if CheckDragonTalon() then 
                     break 
                 end
@@ -245,24 +245,27 @@ task.spawn(function()
             
             task.wait(3)
             
+            -- Cấu hình chung cho Banana Hub
+            getgenv().Key = "51e126ee832d3c4fff7b6178" 
+            getgenv().NewUI = true
+            
             if currentMastery < 500 then
-                getgenv().Key = "51e126ee832d3c4fff7b6178" 
-                getgenv().NewUI = true
                 getgenv().Config = {
                     ["Select Method Farm"] = "Farm Bones",
                     ["Start Farm"] = true
                 }
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
             else
-                getgenv().Key = "51e126ee832d3c4fff7b6178" 
-                getgenv().NewUI = true
                 getgenv().Config = {
                     ["Select Method Farm"] = "Farm Bones",
                     ["Start Farm"] = false,
                     ["Auto Quest Dojo Trainer"] = true
                 }
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
             end
+            
+            -- Load Banana Hub
+            pcall(function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
+            end)
             
             bananaHubLoaded = true
             break 
