@@ -1,14 +1,30 @@
 -- ==========================================
 -- [ PHẦN 0 : CHỌN TEAM & ĐỢI GAME LOAD ]
 -- ==========================================
-if not game:IsLoaded() then
-    game.Loaded:Wait()
+repeat task.wait() until game:IsLoaded()
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+
+-- Chờ cho đến khi GUI chính của game thực sự sẵn sàng
+repeat task.wait(0.5) until LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.PlayerGui:FindFirstChild("Main")
+
+-- Detect và tự động chọn Team Marines nếu tài khoản chưa có team
+if LocalPlayer.Team == nil then
+    while LocalPlayer.Team == nil do
+        pcall(function()
+            -- Gửi lệnh chọn Hải Quân
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", "Marines")
+            
+            -- Tắt hẳn bảng chọn team mặc định của game để tránh kẹt UI
+            if LocalPlayer.PlayerGui.Main:FindFirstChild("ChooseTeam") then
+                LocalPlayer.PlayerGui.Main.ChooseTeam.Visible = false
+            end
+        end)
+        task.wait(1) -- Delay 1s mỗi lần thử để tránh spam request lên server
+    end
 end
 
-pcall(function()
-    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", "Marines")
-end)
-
+-- Đợi 4 giây cho nhân vật rớt hẳn xuống map và load xong các part xung quanh
 task.wait(4)
 
 -- ==========================================
@@ -224,10 +240,8 @@ task.spawn(function()
                 ActionStatus.Text = "Hành động: Delay 3s chuẩn bị chạy Farm Bones..."
             end
             
-            -- Đợi 3 giây sau khi check Mastery thành công
             task.wait(3)
             
-            -- Chạy kịch bản dựa trên mốc 500 Mastery
             if currentMastery < 500 then
                 repeat wait() until game:IsLoaded() and game.Players.LocalPlayer 
                 getgenv().Key = "51e126ee832d3c4fff7b6178" 
@@ -249,7 +263,6 @@ task.spawn(function()
                 loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
             end
             
-            -- Cờ đánh dấu đã load xong để dừng vòng lặp vô hạn
             bananaHubLoaded = true
             break 
             
@@ -258,7 +271,6 @@ task.spawn(function()
             MasteryLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
         end
         
-        -- Cứ 2 giây sẽ check lại một lần xem có Dragon Talon chưa
         task.wait(2)
     end
 end)
