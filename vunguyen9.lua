@@ -272,7 +272,15 @@ task.spawn(function()
             getgenv().Config = {
                 ["Select Method Farm"] = "Farm Bones",
                 ["Start Farm"] = false,
-                ["Auto Quest Dojo Trainer"] = true
+                ["Auto Quest Dojo Trainer"] = true,
+                ["Select Zone"] = "Zone 6",
+                ["Select Boat"] = "Brigade"
+                ["Select Sea Events"] = {
+                         ["Shark"] = true,
+                         ["Terrorshark"] = true,
+                         ["Piranha"] = true,
+                         ["Ship"] = true,
+                    }
             }
         end
         loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
