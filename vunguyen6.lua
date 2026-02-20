@@ -1,39 +1,40 @@
--- [[ CONFIG ]]
-getgenv().Team = "Marines"
+-- ==========================================
+-- [ PHẦN 0 : CHỌN TEAM & ĐỢI GAME LOAD ]
+-- ==========================================
+getgenv().Team = "Marines" 
 
--- ==========================================
--- [ PHAN 0 : AUTO JOIN TEAM & LOAD GAME ]
--- ==========================================
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- Luong spam chon team cho den khi thanh cong
+-- Luồng spam detect và chọn team chuẩn cho đến khi thành công
 task.spawn(function()
     local Player = game.Players.LocalPlayer
     while task.wait(0.5) do
         if Player.Team ~= nil then
-            break
+            break -- Đã chọn được team thành công, dừng vòng lặp
         end
         pcall(function()
-            -- Gui lenh chon team
+            -- Gửi lệnh chọn phe lên Server
             game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", getgenv().Team)
             
-            -- An bang ChooseTeam de tranh ket giao dien
+            -- Tắt bảng ChooseTeam nếu nó đang hiện để tránh kẹt giao diện
             if Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("Main") then
-                local ct = Player.PlayerGui.Main:FindFirstChild("ChooseTeam")
-                if ct then ct.Visible = false end
+                local chooseTeamUI = Player.PlayerGui.Main:FindFirstChild("ChooseTeam")
+                if chooseTeamUI then
+                    chooseTeamUI.Visible = false
+                end
             end
         end)
     end
 end)
 
--- Doi nhan vat spawn
+-- Đợi nhân vật spawn hoàn tất trước khi chạy tiếp các phần sau
 repeat task.wait() until game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 task.wait(2)
 
 -- ==========================================
--- [ PHAN 1 : DRGTL ] LOI LOGIC (CORE)
+-- [ PHẦN 1 : DRGTL ] LÕI LOGIC (CORE)
 -- ==========================================
 local Player = game.Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -46,7 +47,7 @@ local Trade_CFrame = CFrame.new(-12596.668, 336.671, -7556.832)
 local function CheckDragonTalon()
     local character = Player.Character
     local backpack = Player:WaitForChild("Backpack")
-    return (character and character:FindFirstChild("Dragon Talon")) or (backpack and backpack:FindFirstChild("Backpack"):FindFirstChild("Dragon Talon")) or (backpack and backpack:FindFirstChild("Dragon Talon"))
+    return (character and character:FindFirstChild("Dragon Talon")) or (backpack and backpack:FindFirstChild("Dragon Talon"))
 end
 
 local function TweenTo(targetCFrame)
@@ -90,11 +91,12 @@ local function TweenTo(targetCFrame)
 end
 
 -- ==========================================
--- [ PHAN 2 : Check Mastery Dragon Talon ]
+-- [ PHẦN 2 : Check Mastery Dragon Talon ]
 -- ==========================================
 local function GetWeaponMastery(weaponName)
     local character = Player.Character
     local backpack = Player:WaitForChild("Backpack")
+    
     local item = (character and character:FindFirstChild(weaponName)) or (backpack and backpack:FindFirstChild(weaponName))
     if item and item:FindFirstChild("Level") then
         return item.Level.Value
@@ -103,7 +105,7 @@ local function GetWeaponMastery(weaponName)
 end
 
 -- ==========================================
--- [ PHAN 3 ] GIAO DIEN MONITOR (VANG - DEN)
+-- [ PHẦN 3 ] GIAO DIỆN MONITOR (VÀNG - ĐEN)
 -- ==========================================
 if CoreGui:FindFirstChild("DracoHubUI") then
     CoreGui.DracoHubUI:Destroy()
@@ -129,6 +131,13 @@ Title.TextColor3 = Color3.fromRGB(255, 200, 0)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
+Title.TextXAlignment = Enum.TextXAlignment.Center
+
+local Line = Instance.new("Frame", Title)
+Line.Size = UDim2.new(1, 0, 0, 1)
+Line.Position = UDim2.new(0, 0, 1, 0)
+Line.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+Line.BorderSizePixel = 0
 
 local TPTradeBtn = Instance.new("TextButton", MainFrame)
 TPTradeBtn.Size = UDim2.new(0, 70, 0, 25)
@@ -148,80 +157,130 @@ InfoPanel.BackgroundTransparency = 1
 
 local SpawnLabel = Instance.new("TextLabel", InfoPanel)
 SpawnLabel.Size = UDim2.new(1, 0, 0, 25)
-SpawnLabel.Text = "Dragon Talon: Checking..."
+SpawnLabel.Text = "Dragon Talon: Đang kiểm tra..."
 SpawnLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpawnLabel.Font = Enum.Font.GothamBold
 SpawnLabel.BackgroundTransparency = 1
 SpawnLabel.TextSize = 13
+SpawnLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local ActionStatus = Instance.new("TextLabel", InfoPanel)
 ActionStatus.Size = UDim2.new(1, 0, 0, 25)
 ActionStatus.Position = UDim2.new(0, 0, 0, 25)
-ActionStatus.Text = "Action: Starting..."
+ActionStatus.Text = "Hành động: Khởi động kịch bản..."
 ActionStatus.TextColor3 = Color3.fromRGB(200, 200, 200)
 ActionStatus.Font = Enum.Font.Gotham
 ActionStatus.BackgroundTransparency = 1
 ActionStatus.TextSize = 12
+ActionStatus.TextXAlignment = Enum.TextXAlignment.Left
 
 local MasteryLabel = Instance.new("TextLabel", InfoPanel)
 MasteryLabel.Size = UDim2.new(1, 0, 0, 25)
 MasteryLabel.Position = UDim2.new(0, 0, 0, 50)
-MasteryLabel.Text = "Mastery: Waiting..."
+MasteryLabel.Text = "Mastery: Chờ xác nhận vũ khí..."
 MasteryLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
 MasteryLabel.Font = Enum.Font.GothamBold
 MasteryLabel.BackgroundTransparency = 1
 MasteryLabel.TextSize = 13
+MasteryLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- ==========================================
--- [ PHAN 4 ] MAIN AUTO LOGIC
+-- [ PHẦN 4 ] MAIN AUTO LOGIC (VÒNG LẶP CHÍNH)
 -- ==========================================
 
 TPTradeBtn.MouseButton1Click:Connect(function()
     task.spawn(function()
-        ActionStatus.Text = "Hanh dong: Dang bay den ban Trade..."
+        ActionStatus.Text = "Hành động: Đang bay đến bàn Trade..."
+        TPTradeBtn.Text = "Đang bay..."
         TweenTo(Trade_CFrame)
-        ActionStatus.Text = "Hanh dong: Da den khu Trade!"
+        TPTradeBtn.Text = "TP Trade"
+        ActionStatus.Text = "Hành động: Đã đến khu Trade!"
     end)
 end)
 
+-- 1. LUỒNG AUTO LẤY VŨ KHÍ (DRGTL)
 task.spawn(function()
     while true do
         if CheckDragonTalon() then
-            SpawnLabel.Text = "Dragon Talon: Da so huu"
+            SpawnLabel.Text = "Dragon Talon: Đã sở hữu"
             SpawnLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+            ActionStatus.Text = "Hành động: Hoàn tất lấy vũ khí, đang tập trung Farm!"
             break 
         else
-            SpawnLabel.Text = "Dragon Talon: Chua co"
+            SpawnLabel.Text = "Dragon Talon: Chưa có"
             SpawnLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-            ActionStatus.Text = "Hanh dong: Dang bay den NPC Uzoth..."
+            
+            ActionStatus.Text = "Hành động: Đang bay đến NPC Uzoth..."
             TweenTo(Uzoth_CFrame)
             task.wait(0.5)
-            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("BuyDragonTalon")
-            task.wait(5)
+            
+            ActionStatus.Text = "Hành động: Đang gửi lệnh mua..."
+            local args = {[1] = "BuyDragonTalon"}
+            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
+            
+            for i = 1, 120 do
+                ActionStatus.Text = "Hành động: Đợi mua thành công... (" .. (120 - i) .. "s trước khi thử lại)"
+                if CheckDragonTalon() then 
+                    break 
+                end
+                task.wait(1)
+            end
         end
-        task.wait(1)
     end
 end)
 
-local bananaLoaded = false
+-- 2. LUỒNG CHECK MASTERY & CHẠY BANANA HUB
+local bananaHubLoaded = false
+
 task.spawn(function()
-    while not bananaLoaded do
+    while not bananaHubLoaded do
         if CheckDragonTalon() then
             local currentMastery = GetWeaponMastery("Dragon Talon")
             MasteryLabel.Text = "Mastery: " .. currentMastery .. "/500"
+            
+            if currentMastery >= 500 then
+                MasteryLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                ActionStatus.Text = "Hành động: Delay 3s chuẩn bị chạy Auto Dojo..."
+            else
+                MasteryLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+                ActionStatus.Text = "Hành động: Delay 3s chuẩn bị chạy Farm Bones..."
+            end
+            
+            -- Đợi 3 giây sau khi check Mastery thành công
             task.wait(3)
             
-            getgenv().Key = "51e126ee832d3c4fff7b6178" 
-            getgenv().NewUI = true
-            getgenv().Config = {
-                ["Select Method Farm"] = "Farm Bones",
-                ["Start Farm"] = (currentMastery < 500),
-                ["Auto Quest Dojo Trainer"] = (currentMastery >= 500)
-            }
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
-            bananaLoaded = true
+            -- Chạy kịch bản dựa trên mốc 500 Mastery
+            if currentMastery < 500 then
+                repeat wait() until game:IsLoaded() and game.Players.LocalPlayer 
+                getgenv().Key = "51e126ee832d3c4fff7b6178" 
+                getgenv().NewUI = true
+                getgenv().Config = {
+                    ["Select Method Farm"] = "Farm Bones",
+                    ["Start Farm"] = true
+                }
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
+            else
+                repeat wait() until game:IsLoaded() and game.Players.LocalPlayer 
+                getgenv().Key = "51e126ee832d3c4fff7b6178" 
+                getgenv().NewUI = true
+                getgenv().Config = {
+                    ["Select Method Farm"] = "Farm Bones",
+                    ["Start Farm"] = false,
+                    ["Auto Quest Dojo Trainer"] = true
+                }
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
+            end
+            
+            -- Cờ đánh dấu đã load xong để dừng vòng lặp vô hạn
+            bananaHubLoaded = true
             break 
+            
+        else
+            MasteryLabel.Text = "Mastery: Đang đi lấy vũ khí..."
+            MasteryLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
         end
+        
+        -- Cứ 2 giây sẽ check lại một lần xem có Dragon Talon chưa
         task.wait(2)
     end
 end)
