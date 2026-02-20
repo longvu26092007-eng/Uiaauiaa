@@ -7,6 +7,8 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 
 local Uzoth_CFrame = CFrame.new(5661.898, 1210.877, 863.176)
+-- Tọa độ Bàn Trade (TradeTable)
+local Trade_CFrame = CFrame.new(-12596.668, 336.671, -7556.832)
 
 local function CheckDragonTalon()
     local character = Player.Character
@@ -104,7 +106,19 @@ Line.Position = UDim2.new(0, 0, 1, 0)
 Line.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
 Line.BorderSizePixel = 0
 
--- Bảng thông tin (Mở rộng ra toàn bộ chiều ngang do đã bỏ nút)
+-- NÚT TP TRADE GÓC TRÊN BÊN PHẢI
+local TPTradeBtn = Instance.new("TextButton", MainFrame)
+TPTradeBtn.Size = UDim2.new(0, 70, 0, 25)
+TPTradeBtn.Position = UDim2.new(1, -75, 0, 5) -- Đặt ở góc phải trên cùng
+TPTradeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TPTradeBtn.Text = "TP Trade"
+TPTradeBtn.TextColor3 = Color3.fromRGB(255, 200, 0)
+TPTradeBtn.Font = Enum.Font.GothamBold
+TPTradeBtn.TextSize = 12
+Instance.new("UICorner", TPTradeBtn).CornerRadius = UDim.new(0, 4)
+Instance.new("UIStroke", TPTradeBtn).Color = Color3.fromRGB(255, 200, 0)
+
+-- Bảng thông tin (Mở rộng ra toàn bộ chiều ngang do đã bỏ nút lớn)
 local InfoPanel = Instance.new("Frame", MainFrame)
 InfoPanel.Size = UDim2.new(1, -20, 1, -50)
 InfoPanel.Position = UDim2.new(0, 10, 0, 40)
@@ -143,6 +157,17 @@ MasteryLabel.TextXAlignment = Enum.TextXAlignment.Left
 -- ==========================================
 -- [ PHẦN 4 ] MAIN AUTO LOGIC (VÒNG LẶP CHÍNH)
 -- ==========================================
+
+-- SỰ KIỆN BẤM NÚT TP TRADE
+TPTradeBtn.MouseButton1Click:Connect(function()
+    task.spawn(function()
+        ActionStatus.Text = "Hành động: Đang bay đến bàn Trade..."
+        TPTradeBtn.Text = "Đang bay..."
+        TweenTo(Trade_CFrame)
+        TPTradeBtn.Text = "TP Trade"
+        ActionStatus.Text = "Hành động: Đã đến khu Trade!"
+    end)
+end)
 
 -- 1. LUỒNG AUTO LẤY VŨ KHÍ (DRGTL)
 task.spawn(function()
