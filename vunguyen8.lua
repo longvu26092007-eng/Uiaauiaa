@@ -86,12 +86,11 @@ local function TweenTo(targetCFrame)
 end
 
 -- ==========================================
--- [ PHẦN 2 : Check Mastery Dragon Talon ] -> ĐÃ SỬA LỖI CẬP NHẬT
+-- [ PHẦN 2 : Check Mastery Dragon Talon & Smart Kick ]
 -- ==========================================
 local function GetWeaponMastery(weaponName)
     local masteryValue = 0
     local p = game.Players.LocalPlayer
-    -- Kiểm tra cả trong túi đồ và trên tay nhân vật
     local item = p.Backpack:FindFirstChild(weaponName) or (p.Character and p.Character:FindFirstChild(weaponName))
     
     if item and item:FindFirstChild("Level") then
@@ -99,6 +98,29 @@ local function GetWeaponMastery(weaponName)
     end
     return masteryValue
 end
+
+-- Module kiểm tra thông minh: Chỉ Kick nếu đạt mốc 500 khi đang farm
+task.spawn(function()
+    -- Chờ có vũ khí để kiểm tra chỉ số ban đầu
+    repeat task.wait(1) until CheckDragonTalon()
+    local initialMastery = GetWeaponMastery("Dragon Talon")
+    
+    -- Nếu ngay khi vào game đã >= 500 thì dừng Module Kick luôn để không bị lặp
+    if initialMastery >= 500 then
+        return 
+    end
+
+    -- Nếu vào game mà chưa đủ 500, bắt đầu theo dõi quá trình tăng trưởng
+    while task.wait(3) do
+        local currentMastery = GetWeaponMastery("Dragon Talon")
+        if currentMastery >= 500 then
+            if ActionStatus then ActionStatus.Text = "Hành động: ĐÃ ĐẠT 500 MASTERY! ĐANG KICK..." end
+            task.wait(2)
+            Player:Kick("\n[ Draco Hub ]\nĐã đủ mastery đang tiến hành Kick\nLý do: Đạt mốc 500/500 khi farm. Hãy Rejoin để script nhận diện Dojo Trainer!")
+            break
+        end
+    end
+end)
 
 -- ==========================================
 -- [ PHẦN 3 ] GIAO DIỆN MONITOR (VÀNG - ĐEN)
@@ -160,7 +182,7 @@ SpawnLabel.BackgroundTransparency = 1
 SpawnLabel.TextSize = 13
 SpawnLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-local ActionStatus = Instance.new("TextLabel", InfoPanel)
+ActionStatus = Instance.new("TextLabel", InfoPanel)
 ActionStatus.Size = UDim2.new(1, 0, 0, 25)
 ActionStatus.Position = UDim2.new(0, 0, 0, 25)
 ActionStatus.Text = "Hành động: Khởi động kịch bản..."
@@ -181,7 +203,7 @@ MasteryLabel.TextSize = 13
 MasteryLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- ==========================================
--- [ PHẦN 4 ] MAIN AUTO LOGIC -> ĐÃ SỬA LỖI LUỒNG LẶP
+-- [ PHẦN 4 ] MAIN AUTO LOGIC
 -- ==========================================
 
 TPTradeBtn.MouseButton1Click:Connect(function()
@@ -194,7 +216,6 @@ TPTradeBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- 1. LUỒNG CẬP NHẬT UI MASTERY (LUÔN CHẠY)
 task.spawn(function()
     while true do
         if CheckDragonTalon() then
@@ -209,11 +230,10 @@ task.spawn(function()
             MasteryLabel.Text = "Mastery: Đang đợi lấy vũ khí..."
             MasteryLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
         end
-        task.wait(1) -- Cập nhật mỗi 1 giây
+        task.wait(1)
     end
 end)
 
--- 2. LUỒNG AUTO LẤY VŨ KHÍ
 task.spawn(function()
     while true do
         if CheckDragonTalon() then
@@ -231,7 +251,6 @@ task.spawn(function()
     end
 end)
 
--- 3. LUỒNG LOAD BANANA HUB (CHẠY 1 LẦN KHI ĐỦ ĐIỀU KIỆN)
 local hubLoaded = false
 task.spawn(function()
     repeat task.wait(1) until CheckDragonTalon()
