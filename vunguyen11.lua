@@ -164,6 +164,19 @@ TPTradeBtn.TextSize = 12
 Instance.new("UICorner", TPTradeBtn).CornerRadius = UDim.new(0, 4)
 Instance.new("UIStroke", TPTradeBtn).Color = Color3.fromRGB(255, 200, 0)
 
+-- [ THÊM NÚT BẬT SCRIPT THỦ CÔNG KHI ĐẠT 500 MASTERY ]
+local ManualDojoBtn = Instance.new("TextButton", MainFrame)
+ManualDojoBtn.Size = UDim2.new(0, 105, 0, 25)
+ManualDojoBtn.Position = UDim2.new(1, -185, 0, 5)
+ManualDojoBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+ManualDojoBtn.Text = "Bật Script Dojo"
+ManualDojoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ManualDojoBtn.Font = Enum.Font.GothamBold
+ManualDojoBtn.TextSize = 12
+ManualDojoBtn.Visible = false -- Ẩn đi, chỉ hiện khi thoả điều kiện
+Instance.new("UICorner", ManualDojoBtn).CornerRadius = UDim.new(0, 4)
+Instance.new("UIStroke", ManualDojoBtn).Color = Color3.fromRGB(0, 255, 0)
+
 local InfoPanel = Instance.new("Frame", MainFrame)
 InfoPanel.Size = UDim2.new(1, -20, 1, -50)
 InfoPanel.Position = UDim2.new(0, 10, 0, 40)
@@ -199,9 +212,34 @@ MasteryLabel.TextSize = 13
 MasteryLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- ==========================================
--- [ PHẦN 4 ] MAIN AUTO LOGIC
+-- [ PHẦN 5 ] DETECT DOJO BELT
 -- ==========================================
+-- Danh sách 8 loại Belt:
+-- "Dojo Belt (White)", "Dojo Belt (Yellow)", "Dojo Belt (Orange)", "Dojo Belt (Green)", 
+-- "Dojo Belt (Blue)", "Dojo Belt (Purple)", "Dojo Belt (Red)", "Dojo Belt (Black)"
 
+local function CheckDojoBelt(beltName)
+    local p = game.Players.LocalPlayer
+    -- Kiểm tra nếu đang đeo trên người
+    if p.Character and p.Character:FindFirstChild(beltName) then return true end
+    -- Kiểm tra trong Backpack
+    if p:WaitForChild("Backpack"):FindFirstChild(beltName) then return true end
+    
+    -- Kiểm tra kỹ trong Data/Inventory của Blox Fruits
+    local ok, inv = pcall(function() return game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("getInventory") end)
+    if ok and type(inv) == "table" then
+        for _, v in pairs(inv) do
+            if type(v) == "table" and v.Name == beltName then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- ==========================================
+-- [ PHẦN 4 ] MAIN AUTO LOGIC (TÍCH HỢP ĐIỀU KIỆN PHẦN 5)
+-- ==========================================
 TPTradeBtn.MouseButton1Click:Connect(function()
     task.spawn(function()
         ActionStatus.Text = "Hành động: Đang bay đến bàn Trade..."
@@ -248,41 +286,77 @@ task.spawn(function()
 end)
 
 local hubLoaded = false
-task.spawn(function()
-    repeat task.wait(1) until CheckDragonTalon()
+
+-- Tách hàm gọi Banana Dojo ra riêng để dùng cho cả Auto và Nút bấm thủ công
+local function LoadBananaHubDojo()
     if not hubLoaded then
         hubLoaded = true
-        local currentMastery = GetWeaponMastery("Dragon Talon")
-        ActionStatus.Text = "Hành động: Đang khởi tạo Banana Hub..."
-        task.wait(3)
+        ActionStatus.Text = "Hành động: Đang tải Banana Hub (Dojo)..."
+        task.wait(2)
         
-        -- PHẦN CHỈNH SỬA LỖI THEO YÊU CẦU:
         repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer 
         getgenv().Key = "51e126ee832d3c4fff7b6178" 
         getgenv().NewUI = true
+        getgenv().Config = {
+            ["Select Method Farm"] = "Farm Bones",
+            ["Start Farm"] = false,
+            ["Auto Quest Dojo Trainer"] = true,
+            ["Select Zone"] = "Zone 6",
+            ["Select Boat"] = "Brigade",
+            ["Select Sea Events"] = {
+                ["Shark"] = true,
+                ["Terrorshark"] = true,
+                ["Piranha"] = true,
+                ["Ship"] = true
+            }
+        }
         
-        if currentMastery < 500 then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
+        ActionStatus.Text = "Hành động: Banana Hub (Dojo) đã load xong!"
+        ManualDojoBtn.Visible = false -- Ẩn nút đi sau khi load
+    end
+end
+
+-- Kết nối nút bấm thủ công
+ManualDojoBtn.MouseButton1Click:Connect(LoadBananaHubDojo)
+
+task.spawn(function()
+    repeat task.wait(1) until CheckDragonTalon()
+    
+    local currentMastery = GetWeaponMastery("Dragon Talon")
+    
+    if currentMastery < 500 then
+        -- KHI CHƯA ĐẠT 500 MASTERY: AUTO FARM BONE
+        if not hubLoaded then
+            hubLoaded = true
+            ActionStatus.Text = "Hành động: Đang khởi tạo Banana Hub (Farm Bone)..."
+            task.wait(3)
+            
+            repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer 
+            getgenv().Key = "51e126ee832d3c4fff7b6178" 
+            getgenv().NewUI = true
             getgenv().Config = {
                 ["Select Method Farm"] = "Farm Bones",
                 ["Start Farm"] = true
             }
-        else
-            getgenv().Config = {
-                ["Select Method Farm"] = "Farm Bones",
-                ["Start Farm"] = false,
-                ["Auto Quest Dojo Trainer"] = true,
-                ["Select Zone"] = "Zone 6",
-                ["Select Boat"] = "Brigade",
-                ["Select Sea Events"] = {
-                    ["Shark"] = true,
-                    ["Terrorshark"] = true,
-                    ["Piranha"] = true,
-                    ["Ship"] = true
-                }
-            }
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
+            ActionStatus.Text = "Hành động: Banana Hub đã load xong!"
         end
+    else
+        -- KHI ĐÃ ĐẠT 500 MASTERY: CHECK DOJO BELT TRƯỚC KHI AUTO DOJO TRAINER
+        local hasWhite = CheckDojoBelt("Dojo Belt (White)")
+        local hasYellow = CheckDojoBelt("Dojo Belt (Yellow)")
+        local hasOrange = CheckDojoBelt("Dojo Belt (Orange)")
         
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
-        ActionStatus.Text = "Hành động: Banana Hub đã load xong!"
+        -- Nếu đã có White và Yellow NHƯNG CHƯA CÓ Orange
+        if hasWhite and hasYellow and not hasOrange then
+            ActionStatus.Text = "Tạm dừng Auto Dojo vì thiếu Orange Belt. Hãy bật thủ công!"
+            ActionStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
+            -- Hiện nút bấm để bạn có thể tự quyết định khi nào chạy
+            ManualDojoBtn.Visible = true
+        else
+            -- Nếu điều kiện bình thường, tiến hành auto load
+            LoadBananaHubDojo()
+        end
     end
 end)
