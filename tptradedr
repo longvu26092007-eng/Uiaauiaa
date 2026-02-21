@@ -1,0 +1,140 @@
+--[[
+    TRADE TELEPORTER - SECURITY EDITION
+    Bản tách rời từ Draco Hub V1
+--]]
+
+-- Ngăn chặn chạy nhiều bản script cùng lúc
+if _G.TradeTeleportLoaded then
+    warn("Script đã được thực thi trước đó!")
+    return
+end
+_G.TradeTeleportLoaded = true
+
+-- Khởi tạo dịch vụ
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local lp = Players.LocalPlayer
+
+-- Cấu hình tọa độ bàn Trade (Sea 3)
+local Trade_CFrame = CFrame.new(-12596.668, 336.671, -7556.832)
+
+-- Thuật toán Tween an toàn (Noclip + Anti-Gravity)
+local function SecureTween(targetCFrame)
+    local char = lp.Character or lp.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    local hum = char:WaitForChild("Humanoid")
+    
+    local distance = (hrp.Position - targetCFrame.Position).Magnitude
+    if distance <= 10 then return end -- Đã ở quá gần
+
+    -- 1. Anti-Gravity: Chống rơi tự do khi đang bay
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "SecureFlight"
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.Velocity = Vector3.new(0, 0, 0)
+    bv.Parent = hrp
+    
+    -- 2. Tính toán tốc độ (300 là mốc an toàn nhất cho Blox Fruit)
+    local speed = 300 
+    local time = distance / speed
+    local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
+    
+    -- 3. Noclip: Xuyên tường để tránh bị kẹt vật thể dẫn đến bị Kick
+    local noclipLoop
+    noclipLoop = RunService.Stepped:Connect(function()
+        hum:ChangeState(11) -- Noclip state
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end)
+    
+    tween:Play()
+    tween.Completed:Wait() 
+    
+    -- Dọn dẹp sau khi đến nơi
+    if bv then bv:Destroy() end
+    if noclipLoop then noclipLoop:Disconnect() end
+    hum:ChangeState(8) -- Reset về trạng thái bình thường
+end
+
+-- ==========================================
+-- GIAO DIỆN NGƯỜI DÙNG (VÀNG - ĐEN)
+-- ==========================================
+
+-- Xóa UI cũ nếu tồn tại
+if CoreGui:FindFirstChild("TradeTeleportUI") then
+    CoreGui.TradeTeleportUI:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "TradeTeleportUI"
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 200, 0, 100)
+MainFrame.Position = UDim2.new(0.5, -100, 0.8, 0) -- Đặt ở phía dưới giữa màn hình
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Active = true
+MainFrame.Draggable = true 
+
+-- Hiệu ứng viền vàng
+local Stroke = Instance.new("UIStroke", MainFrame)
+Stroke.Color = Color3.fromRGB(255, 200, 0)
+Stroke.Thickness = 1.5
+
+local Corner = Instance.new("UICorner", MainFrame)
+Corner.CornerRadius = UDim.new(0, 10)
+
+-- Tiêu đề
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "DRACO TRADE TP"
+Title.TextColor3 = Color3.fromRGB(255, 200, 0)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+
+-- Nút bấm Teleport
+local TPButton = Instance.new("TextButton", MainFrame)
+TPButton.Size = UDim2.new(0, 160, 0, 40)
+TPButton.Position = UDim2.new(0.5, -80, 0.5, -5)
+TPButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TPButton.Text = "START TELEPORT"
+TPButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+TPButton.Font = Enum.Font.GothamBold
+TPButton.TextSize = 12
+
+local BtnCorner = Instance.new("UICorner", TPButton)
+BtnCorner.CornerRadius = UDim.new(0, 6)
+
+-- Trạng thái
+local Status = Instance.new("TextLabel", MainFrame)
+Status.Size = UDim2.new(1, 0, 0, 20)
+Status.Position = UDim2.new(0, 0, 1, -25)
+Status.Text = "Status: Ready"
+Status.TextColor3 = Color3.fromRGB(150, 150, 150)
+Status.BackgroundTransparency = 1
+Status.Font = Enum.Font.Gotham
+Status.TextSize = 10
+
+-- Xử lý sự kiện click
+TPButton.MouseButton1Click:Connect(function()
+    TPButton.Active = false
+    TPButton.Text = "TELEPORTING..."
+    TPButton.TextColor3 = Color3.fromRGB(255, 200, 0)
+    Status.Text = "Status: Moving to Trade Tables"
+    
+    SecureTween(Trade_CFrame)
+    
+    TPButton.Active = true
+    TPButton.Text = "ARRIVED"
+    Status.Text = "Status: Teleport Successful"
+    task.wait(2)
+    TPButton.Text = "START TELEPORT"
+end)
+
+print("[Draco Hub] Trade Teleporter Loaded!")
