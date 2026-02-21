@@ -153,29 +153,30 @@ Line.Position = UDim2.new(0, 0, 1, 0)
 Line.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
 Line.BorderSizePixel = 0
 
+-- CHỈNH SỬA VỊ TRÍ VÀ MÀU NÚT TP TRADE
 local TPTradeBtn = Instance.new("TextButton", MainFrame)
 TPTradeBtn.Size = UDim2.new(0, 70, 0, 25)
-TPTradeBtn.Position = UDim2.new(1, -75, 0, 5)
-TPTradeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TPTradeBtn.Position = UDim2.new(1, -80, 1, -30) -- Chuyển xuống góc dưới cùng bên phải
+TPTradeBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Nền đen
 TPTradeBtn.Text = "TP Trade"
-TPTradeBtn.TextColor3 = Color3.fromRGB(255, 200, 0)
+TPTradeBtn.TextColor3 = Color3.fromRGB(255, 200, 0) -- Chữ vàng
 TPTradeBtn.Font = Enum.Font.GothamBold
 TPTradeBtn.TextSize = 12
 Instance.new("UICorner", TPTradeBtn).CornerRadius = UDim.new(0, 4)
-Instance.new("UIStroke", TPTradeBtn).Color = Color3.fromRGB(255, 200, 0)
+Instance.new("UIStroke", TPTradeBtn).Color = Color3.fromRGB(255, 200, 0) -- Viền vàng
 
--- [ THÊM NÚT BẬT SCRIPT THỦ CÔNG KHI ĐẠT 500 MASTERY ]
+-- CHỈNH SỬA VỊ TRÍ VÀ MÀU NÚT BẬT SCRIPT DOJO
 local ManualDojoBtn = Instance.new("TextButton", MainFrame)
 ManualDojoBtn.Size = UDim2.new(0, 105, 0, 25)
-ManualDojoBtn.Position = UDim2.new(1, -185, 0, 5)
-ManualDojoBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+ManualDojoBtn.Position = UDim2.new(1, -195, 1, -30) -- Chuyển xuống góc dưới cùng, ngay cạnh nút TP Trade
+ManualDojoBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- Nền đen
 ManualDojoBtn.Text = "Bật Script Dojo"
-ManualDojoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ManualDojoBtn.TextColor3 = Color3.fromRGB(255, 200, 0) -- Chữ vàng
 ManualDojoBtn.Font = Enum.Font.GothamBold
 ManualDojoBtn.TextSize = 12
 ManualDojoBtn.Visible = false -- Ẩn đi, chỉ hiện khi thoả điều kiện
 Instance.new("UICorner", ManualDojoBtn).CornerRadius = UDim.new(0, 4)
-Instance.new("UIStroke", ManualDojoBtn).Color = Color3.fromRGB(0, 255, 0)
+Instance.new("UIStroke", ManualDojoBtn).Color = Color3.fromRGB(255, 200, 0) -- Viền vàng
 
 local InfoPanel = Instance.new("Frame", MainFrame)
 InfoPanel.Size = UDim2.new(1, -20, 1, -50)
