@@ -1,21 +1,22 @@
 -- ======================================================================
--- REMOTE SPY V11 - DÀNH RIÊNG CHO FISHERMAN (LOG TO F9)
--- Dựa trên logic hệ thống bạn gửi và tối ưu hóa chống trôi log
+-- REMOTE SPY V11.2 - CHUYÊN DỤNG CHO FISHERMAN (CẢI THIỆN TẦM NHÌN)
+-- Tự động lọc, làm sạch Console và hỗ trợ Auto Copy
 -- ======================================================================
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LogService = game:GetService("LogService")
 
--- Xóa sạch Console cũ để dễ nhìn (nếu Executor hỗ trợ)
-if printconsole then printconsole("--- ĐANG ĐỢI LỆNH TỪ FISHERMAN ---") end
+-- 1. Làm sạch Terminal trước khi chạy (Dành cho Executor hỗ trợ)
+if rconsolestatus then rconsolestatus("FISHERMAN SPY BY GEMINI") end
+if rconsoleclear then rconsoleclear() end
 
-print("==============================================")
-print("🚀 [V11] REMOTE SPY FISHERMAN ĐÃ KÍCH HOẠT")
-print("👉 HƯỚNG DẪN: Bấm phím F9 (hoặc gõ /console)")
-print("👉 Tìm những dòng có dấu ⭐⭐⭐")
-print("==============================================")
+print("====================================================")
+print("🚀 [V11.2] REMOTE SPY FISHERMAN - ĐANG LẮNG NGHE...")
+print("👉 HƯỚNG DẪN: Cậu cứ đi mua mồi/craft như bình thường.")
+print("👉 Hệ thống sẽ tự lọc và hiện lệnh quan trọng nhất ở đây.")
+print("====================================================")
 
--- Hàm định dạng Arguments để bạn copy dán vào script luôn được
+-- Hàm định dạng tham số cực chuẩn
 local function FormatArgs(args)
     local out = {}
     for i, v in pairs(args) do
@@ -23,8 +24,10 @@ local function FormatArgs(args)
             table.insert(out, '"' .. v .. '"')
         elseif type(v) == "number" or type(v) == "boolean" then
             table.insert(out, tostring(v))
+        elseif v == nil then
+            table.insert(out, "nil")
         else
-            table.insert(out, "nil") -- Hoặc tostring(v) nếu cần soi Object
+            table.insert(out, tostring(v)) -- Tránh lỗi "nil" khi gặp Object bí mật
         end
     end
     return table.concat(out, ", ")
@@ -43,18 +46,31 @@ mt.__namecall = newcclosure(function(self, ...)
         local argString = FormatArgs(args)
         local lowerArgs = argString:lower()
         
-        -- BỘ LỌC CỰC MẠNH: Chỉ bắt những gì liên quan đến Fisherman hoặc Bait
-        if string.find(lowerArgs, "fisherman") or string.find(lowerArgs, "bait") then
+        -- BỘ LỌC THÔNG MINH: Chỉ bắt các lệnh chứa từ khóa quan trọng
+        if lowerArgs:find("fisherman") or lowerArgs:find("bait") or lowerArgs:find("fishing") or lowerArgs:find("craft") then
             
-            -- In ra F9 với định dạng nổi bật nhất
-            warn("⭐⭐⭐ PHÁT HIỆN LỆNH GỬI LÊN SERVER ⭐⭐⭐")
-            print("▶️ Remote: " .. self.Name)
-            print("▶️ Method: " .. method)
-            print("▶️ Cấu trúc Args chuẩn:")
-            print("   " .. argString)
-            print("▶️ Câu lệnh dùng cho Script Silent:")
-            print('   game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(' .. argString .. ')')
+            -- Lệnh hoàn chỉnh để dán vào Lua
+            local finalCmd = string.format('game.%s:%s(%s)', self:GetFullName(), method, argString)
+            
+            -- IN RA F9 (MÀU VÀNG ĐỂ DỄ NHÌN)
+            warn("✨ PHÁT HIỆN LỆNH MỚI ✨")
+            print("💎 Remote: " .. self.Name)
+            print("🔧 Cách gọi: " .. method)
+            print("📝 Args: " .. argString)
+            print("🚀 DÙNG LỆNH NÀY:")
+            print("   " .. finalCmd)
             warn("------------------------------------------")
+
+            -- TỰ ĐỘNG COPY VÀO CLIPBOARD (Dễ dàng nhất cho Vũ)
+            if setclipboard then
+                setclipboard(finalCmd)
+                -- Thông báo nhỏ trên màn hình game
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Fisherman Spy",
+                    Text = "Đã tự động Copy lệnh vào Clipboard!",
+                    Duration = 2
+                })
+            end
         end
     end
 
