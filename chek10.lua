@@ -74,7 +74,7 @@ end
 -- 7. LUỒNG TỰ ĐỘNG QUÉT CHÍNH
 task.spawn(function()
     -- Lần đầu vào game: Delay 5 giây
-    task.wait(5)
+    task.wait(9)
     
     for i = 1, 3 do
         Status.Text = "🔍 Quét Lần " .. i .. "/3 (Nghỉ 5s)..."
