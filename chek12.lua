@@ -15,7 +15,17 @@ local Blacklist = {
     "SherryCarroll491", "MadelinePatton378", "AzaleaSchmidt2", "StacyMagnolia55519",
     "LatashaBarber882", "PennyWade86503", "MackenzieSchultz1", "LindseyRosales1",
     "KathrynCampos6603", "MadisonGiles6618", "AlisonMerritt2541", "RoseMcfarland5",
-    "MariahBradford76", "KristinOdom58", "NatalieWalsh8016", "LarryKeller10"
+    "MariahBradford76", "KristinOdom58", "NatalieWalsh8016", "LarryKeller10",
+    "CarlyFleming4785", "ErinConway6863", "ErnestDodson109", "CalvinZamora5428",
+    "SheliaFischer9521", "KittyGriffin7", "CharleneNoble22", "DouglasDonovan91604",
+    "GreggDouglas79", "RyanHood7937", "KristineSandoval2220", "VickiMccann4399",
+    "ChristinaRose427", "BearBurgundy0", "JeanKennedy4884", "NormanArmstrong530",
+    "BreannaHall14690", "CarlyBoyle84375", "MarissaKaufman458", "JoyceShelton894",
+    "JudyBeasley33420", "TammyNorton2457", "AlexanderDavis34598", "CarlaAdams13",
+    "RebekahHensley9575", "AlexaGriffin784", "TristanFerguson4782", "BrittanyEvans8272",
+    "RubenPark74529", "CindyPeterson4830", "RuthCooke4072", "JessicaHenry1315",
+    "JamieKline4935", "ZoeCarter3307", "DaisyPitts52703", "MackenziePalmer6",
+    "JaimePastel16", "AmberMalone203"
 }
 
 -- 2. LINK SCRIPT SERVER HOP CỦA VŨ
