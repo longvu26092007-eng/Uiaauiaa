@@ -328,7 +328,6 @@ local function LoadBananaHub(typeStr)
         end
         
         pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))() end)
-        ActionStatus.Text = "Hành động: Banana Hub (" .. typeStr .. ") đã Load!"
         if ManualDojoBtn then ManualDojoBtn.Visible = false end
     end)
 end
@@ -341,6 +340,7 @@ task.spawn(function()
     local startRed, _ = CheckItemInInv(initialInv, "Dojo Belt (Red)")
     local startBlack, _ = CheckItemInInv(initialInv, "Dojo Belt (Black)")
     local _, startBones = CheckItemInInv(initialInv, "Dinosaur Bones")
+    local eggFileCreated = false -- Biến cờ để chỉ tạo file txt 1 lần duy nhất
     
     while task.wait(4) do
         local currentMastery = GetWeaponMastery("Dragon Talon")
@@ -356,6 +356,7 @@ task.spawn(function()
             local hasRed = CheckItemInInv(inv, "Dojo Belt (Red)")
             local hasBlack = CheckItemInInv(inv, "Dojo Belt (Black)")
             local _, boneCount = CheckItemInInv(inv, "Dinosaur Bones")
+            local _, eggCount = CheckItemInInv(inv, "Dragon Egg") -- Check Dragon Egg ngay trong luồng chính
             
             -- SMART KICK
             if hasRed and not startRed then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Red Belt."); break end
@@ -369,8 +370,16 @@ task.spawn(function()
             -- ======================================
             if hasBlack then
                 if IsLearnDone() then
-                    ActionStatus.Text = "Hành động: LearnDone (JSON)! Chạy Banana Golem..."
-                    LoadBananaHub("Golem")
+                    if eggCount >= 4 then
+                        ActionStatus.Text = "Hành động: Đã đủ 4/4 Dragon Egg! Đã tạo file txt."
+                        if not eggFileCreated then
+                            pcall(function() writefile(Player.Name .. ".txt", "Completed-Draegg") end)
+                            eggFileCreated = true
+                        end
+                    else
+                        ActionStatus.Text = "Hành động: Săn Dragon Egg (" .. eggCount .. "/4)... Chạy Golem"
+                        LoadBananaHub("Golem")
+                    end
                 else
                     if boneCount >= 3 then
                         ActionStatus.Text = "Hành động: Đủ Black Belt & Bones! Delay 3s Tween..."
@@ -401,8 +410,7 @@ task.spawn(function()
                                 ActionStatus.Text = "Hành động: Học thành công! Delay 3s lưu file..."
                                 task.wait(3)
                                 SaveLearnStatus()
-                                ActionStatus.Text = "Hành động: Đã lưu! Chuyển sang Golem..."
-                                LoadBananaHub("Golem")
+                                ActionStatus.Text = "Hành động: Đã lưu! Chuyển sang check Dragon Egg..."
                             end
                         end
                     else
