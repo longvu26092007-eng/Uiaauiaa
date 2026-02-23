@@ -1,7 +1,7 @@
 -- =============================================================
--- DRACO HUB - DRAGON WIZARD (DEEP SCAN VERSION)
--- Lộ trình: Tween -> Speak -> LearnTether
--- Fix lỗi: Chống báo nhầm trạng thái "Đã học"
+-- DRACO HUB - DRAGON WIZARD (OPTION SCANNER VERSION)
+-- Cơ chế: Kiểm tra sự tồn tại của nút "LearnTether" trong Options
+-- Style: Vàng - Đen (Draco Hub Standard)
 -- =============================================================
 
 repeat task.wait() until game:IsLoaded()
@@ -16,9 +16,9 @@ local lp = Players.LocalPlayer
 local TargetNPC = CFrame.new(5773.936035, 1209.442871, 809.224548)
 local SPEED = 240
 
--- 2. GIAO DIỆN MONITOR (VÀNG - ĐEN)
-if CoreGui:FindFirstChild("DracoWizardDeep") then CoreGui.DracoWizardDeep:Destroy() end
-local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "DracoWizardDeep"
+-- 2. GIAO DIỆN MONITOR
+if CoreGui:FindFirstChild("DracoWizardOptionCheck") then CoreGui.DracoWizardOptionCheck:Destroy() end
+local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "DracoWizardOptionCheck"
 local Main = Instance.new("Frame", ScreenGui)
 Main.Size = UDim2.new(0, 300, 0, 180); Main.Position = UDim2.new(0.5, -150, 0.4, 0)
 Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.Active = true; Main.Draggable = true
@@ -35,29 +35,7 @@ StatusLabel.Size = UDim2.new(1, -20, 0, 50); StatusLabel.Position = UDim2.new(0,
 StatusLabel.Text = "Hệ thống: Sẵn sàng"; StatusLabel.TextColor3 = Color3.new(1, 1, 1)
 StatusLabel.BackgroundTransparency = 1; StatusLabel.Font = Enum.Font.Gotham; StatusLabel.TextSize = 12; StatusLabel.TextWrapped = true
 
--- 3. HÀM QUÉT DỮ LIỆU KHẮT KHE (STRICT SCAN)
-local function DeepStrictScan(val)
-    if val == true then return true end
-    local str = tostring(val):lower()
-    
-    -- Chỉ chấp nhận các cụm từ khẳng định chắc chắn đã sở hữu
-    local strictKeywords = {"already learned", "mastered this", "have this knowledge", "already possess"}
-    
-    for _, v in pairs(strictKeywords) do
-        if str:find(v) then return true end
-    end
-    
-    -- Nếu là Table, chui vào quét từng ngóc ngách
-    if type(val) == "table" then
-        for _, subVal in pairs(val) do
-            if DeepStrictScan(subVal) then return true end
-        end
-    end
-    
-    return false
-end
-
--- 4. GỌI REMOTE AN TOÀN
+-- 3. HÀM GỌI REMOTE AN TOÀN
 local function SafeInvoke(cmd)
     local ok, Net = pcall(function() return ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net") end)
     if not ok then return nil end
@@ -69,38 +47,60 @@ local function SafeInvoke(cmd)
     return success, response
 end
 
--- 5. CẬP NHẬT STATUS (F9 DEBUG TÍCH HỢP)
+-- 4. HÀM CHECK STATUS DỰA TRÊN OPTIONS (CÁCH MỚI CỦA VŨ)
 local function UpdateLearnStatus()
     local ok, res = SafeInvoke("Speak")
     
-    -- In ra F9 để cậu soi nếu vẫn báo sai
-    if ok then print("[Draco Debug] NPC Response:", res) end
+    if ok then
+        -- In ra F9 để cậu soi cấu trúc bảng Options nếu cần
+        print("[Draco Debug] NPC Data:", res)
+        
+        local hasLearnOption = false
+        
+        -- Quét trong bảng trả về để tìm mục "Options" hoặc "Commands"
+        if type(res) == "table" then
+            -- Duyệt qua toàn bộ table để tìm chữ "LearnTether"
+            local function findOption(t)
+                for k, v in pairs(t) do
+                    if tostring(v) == "LearnTether" or tostring(k) == "LearnTether" then
+                        hasLearnOption = true
+                        return true
+                    end
+                    if type(v) == "table" then
+                        if findOption(v) then return true end
+                    end
+                end
+                return false
+            end
+            findOption(res)
+        end
 
-    if ok and DeepStrictScan(res) then
-        LearnLabel.Text = "Dragon Tether: ✅ ĐÃ SỞ HỮU"
-        LearnLabel.TextColor3 = Color3.new(0, 1, 0)
-        return true
-    else
-        -- Mặc định là chưa học nếu không thấy từ khóa khẳng định
-        LearnLabel.Text = "Dragon Tether: ❌ CHƯA HỌC"
-        LearnLabel.TextColor3 = Color3.new(1, 0, 0)
-        return false
+        -- XÉT KẾT QUẢ:
+        -- Nếu CÒN nút LearnTether -> CHƯA HỌC
+        if hasLearnOption then
+            LearnLabel.Text = "Dragon Tether: ❌ CHƯA SỞ HỮU"
+            LearnLabel.TextColor3 = Color3.new(1, 0, 0)
+            return false -- Trả về false để script biết cần phải đi học
+        else
+            -- Nếu KHÔNG CÒN nút LearnTether -> ĐÃ SỞ HỮU
+            LearnLabel.Text = "Dragon Tether: ✅ ĐÃ SỞ HỮU"
+            LearnLabel.TextColor3 = Color3.new(0, 1, 0)
+            return true
+        end
     end
+    return false
 end
 
--- 6. HÀM TWEEN GỐC (CỦA VŨ)
+-- 5. TWEEN DI CHUYỂN GỐC
 local function toposition(Pos, onDone)
     local char = lp.Character or lp.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
     local root = char:FindFirstChild("Root") or Instance.new("Part", char)
     root.Name = "Root"; root.Size = Vector3.new(20, 0.5, 20); root.Anchored = true; root.Transparency = 1; root.CanCollide = false
-    
     local distance = (Pos.Position - hrp.Position).Magnitude
     local tween = TweenService:Create(root, TweenInfo.new(distance / SPEED, Enum.EasingStyle.Linear), {CFrame = Pos})
-    
     local running = true
     task.spawn(function() while running do task.wait(); pcall(function() hrp.CFrame = root.CFrame end) end end)
-    
     tween:Play()
     tween.Completed:Connect(function()
         running = false; hrp.CFrame = root.CFrame
@@ -108,29 +108,29 @@ local function toposition(Pos, onDone)
     end)
 end
 
--- 7. THỰC THI CHÍNH
+-- 6. THỰC THI CHÍNH
 local function start()
-    StatusLabel.Text = "⚡ Đang kiểm tra trạng thái..."
+    StatusLabel.Text = "⚡ Đang kiểm tra danh sách menu của NPC..."
     if UpdateLearnStatus() then
-        StatusLabel.Text = "Thông báo: Bạn đã học rồi, không cần bay!"
+        StatusLabel.Text = "Thông báo: Menu NPC không còn nút Learn. Bạn đã học rồi!"
         return
     end
     
     StatusLabel.Text = "🚀 Đang bay đến Dragon Wizard..."
     toposition(TargetNPC, function()
         task.wait(0.3)
-        SafeInvoke("Speak") -- Mồi Speak
+        SafeInvoke("Speak") 
         task.wait(0.5)
         local ok, res = SafeInvoke("LearnTether")
         if ok then 
             StatusLabel.Text = "✅ Đã gửi lệnh Learn!" 
-            task.wait(1.5) -- Đợi server cập nhật data
+            task.wait(1.5)
             UpdateLearnStatus()
         end
     end)
 end
 
--- 8. NÚT BẤM
+-- 7. NÚT BẤM
 local ActionBtn = Instance.new("TextButton", Main)
 ActionBtn.Size = UDim2.new(0, 220, 0, 45); ActionBtn.Position = UDim2.new(0.5, -110, 0.65, 0)
 ActionBtn.Text = "CHECK & LEARN TETHER"; ActionBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
