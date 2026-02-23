@@ -1,12 +1,13 @@
 -- =============================================================
--- DRACO ANTI-STALKER (INDEPENDENT - AUTO DESTRUCT)
--- Cơ chế: Đợi 5s -> Quét 3 lần (mỗi lần cách 5s) -> Không thấy = Hủy script
+-- DRACO ANTI-STALKER V3 (FIXED SELF-DETECT)
+-- Cơ chế: Quét 3 lần -> Bỏ qua bản thân -> Tự hủy nếu an toàn
 -- =============================================================
 
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
 
 -- 1. DANH SÁCH ĐEN CỦA VŨ
 local Blacklist = {
@@ -31,72 +32,68 @@ Instance.new("UICorner", MiniFrame)
 
 local Status = Instance.new("TextLabel", MiniFrame)
 Status.Size = UDim2.new(1, 0, 1, 0); Status.BackgroundTransparency = 1
-Status.Text = "🛡️ Chờ 5s khởi động..."; Status.TextColor3 = Color3.new(1, 1, 1)
+Status.Text = "🛡️ Chờ 9s khởi động..."; Status.TextColor3 = Color3.new(1, 1, 1)
 Status.Font = Enum.Font.GothamBold; Status.TextSize = 11
 
--- Biến quản lý sự kiện PlayerAdded để có thể ngắt kết nối (Disconnect)
 local PlayerAddedConnection
 
 -- 4. HÀM THỰC THI HOP
-local function DoHop()
-    Status.Text = "🚨 BLACKLIST! ĐANG HOP..."
+local function DoHop(detectedName)
+    Status.Text = "🚨 PHÁT HIỆN: " .. detectedName
     Status.TextColor3 = Color3.new(1, 0, 0)
-    task.wait(1)
+    warn("🚨 BLACKLIST DETECTED: " .. detectedName .. "! Đang hop...")
+    task.wait(1.5)
     pcall(function()
         loadstring(game:HttpGet(HopScriptURL))()
     end)
 end
 
--- 5. HÀM QUÉT
+-- 5. HÀM QUÉT (Đã thêm kiểm tra tên mình)
 local function CheckPlayers()
     for _, p in pairs(Players:GetPlayers()) do
-        for _, name in pairs(Blacklist) do
-            if p.Name == name then return true end
+        -- Kiểm tra: Nếu p không phải là mình thì mới check tiếp
+        if p ~= LocalPlayer then 
+            for _, name in pairs(Blacklist) do
+                if p.Name == name then return p.Name end
+            end
         end
     end
-    return false
+    return nil
 end
 
--- 6. HÀM HỦY SCRIPT (Tự hủy sạch sẽ)
+-- 6. HÀM HỦY SCRIPT
 local function DestructScript()
     Status.Text = "✅ An toàn! Tự hủy script..."
     Status.TextColor3 = Color3.new(0, 1, 0)
-    
-    if PlayerAddedConnection then
-        PlayerAddedConnection:Disconnect() -- Ngừng theo dõi người chơi mới
-    end
-    
+    if PlayerAddedConnection then PlayerAddedConnection:Disconnect() end
     task.wait(2)
-    ScreenGui:Destroy() -- Xóa UI
-    script:Destroy() -- Hủy script (nếu chạy từ file)
+    ScreenGui:Destroy()
 end
 
 -- 7. LUỒNG TỰ ĐỘNG QUÉT CHÍNH
 task.spawn(function()
-    -- Lần đầu vào game: Delay 5 giây
-    task.wait(9)
+    task.wait(9) -- Đợi server load
     
     for i = 1, 3 do
-        Status.Text = "🔍 Quét Lần " .. i .. "/3 (Nghỉ 5s)..."
+        Status.Text = "🔍 Quét Lần " .. i .. "/3..."
+        local detected = CheckPlayers()
         
-        if CheckPlayers() then
-            DoHop()
-            return -- Dừng luồng nếu đã hop
+        if detected then
+            DoHop(detected)
+            return
         end
         
-        -- Nếu chưa phải lần cuối thì đợi 5 giây mới quét tiếp
-        if i < 3 then 
-            task.wait(5) 
-        end
+        if i < 3 then task.wait(5) end
     end
     
-    -- Sau 3 lần quét không thấy ai -> Tự hủy
     DestructScript()
 end)
 
--- 8. THEO DÕI NẾU CÓ THẰNG NÀO JOIN TRONG LÚC ĐANG QUÉT
+-- 8. THEO DÕI PLAYER MỚI JOIN (Cũng bỏ qua mình)
 PlayerAddedConnection = Players.PlayerAdded:Connect(function(p)
-    for _, name in pairs(Blacklist) do
-        if p.Name == name then DoHop() end
+    if p ~= LocalPlayer then
+        for _, name in pairs(Blacklist) do
+            if p.Name == name then DoHop(p.Name) end
+        end
     end
 end)
