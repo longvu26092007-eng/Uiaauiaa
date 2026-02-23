@@ -1,7 +1,7 @@
 -- =============================================================
 -- DRACO HUB - DRAGON WIZARD (DEEP SCAN VERSION)
 -- Lộ trình: Tween -> Speak -> LearnTether
--- Tính năng: Quét tận xương tủy phản hồi NPC để báo Status
+-- Fix lỗi: Chống báo nhầm trạng thái "Đã học"
 -- =============================================================
 
 repeat task.wait() until game:IsLoaded()
@@ -12,11 +12,11 @@ local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 local lp = Players.LocalPlayer
 
--- 1. THIẾT LẬP
+-- 1. CẤU HÌNH
 local TargetNPC = CFrame.new(5773.936035, 1209.442871, 809.224548)
 local SPEED = 240
 
--- 2. GIAO DIỆN MONITOR
+-- 2. GIAO DIỆN MONITOR (VÀNG - ĐEN)
 if CoreGui:FindFirstChild("DracoWizardDeep") then CoreGui.DracoWizardDeep:Destroy() end
 local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "DracoWizardDeep"
 local Main = Instance.new("Frame", ScreenGui)
@@ -35,21 +35,22 @@ StatusLabel.Size = UDim2.new(1, -20, 0, 50); StatusLabel.Position = UDim2.new(0,
 StatusLabel.Text = "Hệ thống: Sẵn sàng"; StatusLabel.TextColor3 = Color3.new(1, 1, 1)
 StatusLabel.BackgroundTransparency = 1; StatusLabel.Font = Enum.Font.Gotham; StatusLabel.TextSize = 12; StatusLabel.TextWrapped = true
 
--- 3. HÀM QUÉT SÂU DỮ LIỆU (DEEP SCAN)
-local function DeepScanResponse(val)
+-- 3. HÀM QUÉT DỮ LIỆU KHẮT KHE (STRICT SCAN)
+local function DeepStrictScan(val)
     if val == true then return true end
     local str = tostring(val):lower()
     
-    -- Danh sách từ khóa khẳng định đã học
-    local keywords = {"already", "learned", "mastered", "knowledge", "tether", "possess"}
-    for _, v in pairs(keywords) do
+    -- Chỉ chấp nhận các cụm từ khẳng định chắc chắn đã sở hữu
+    local strictKeywords = {"already learned", "mastered this", "have this knowledge", "already possess"}
+    
+    for _, v in pairs(strictKeywords) do
         if str:find(v) then return true end
     end
     
-    -- Nếu server trả về Table, quét từng tầng của Table
+    -- Nếu là Table, chui vào quét từng ngóc ngách
     if type(val) == "table" then
         for _, subVal in pairs(val) do
-            if DeepScanResponse(subVal) then return true end
+            if DeepStrictScan(subVal) then return true end
         end
     end
     
@@ -68,21 +69,26 @@ local function SafeInvoke(cmd)
     return success, response
 end
 
--- 5. CẬP NHẬT STATUS
+-- 5. CẬP NHẬT STATUS (F9 DEBUG TÍCH HỢP)
 local function UpdateLearnStatus()
     local ok, res = SafeInvoke("Speak")
-    if ok and DeepScanResponse(res) then
+    
+    -- In ra F9 để cậu soi nếu vẫn báo sai
+    if ok then print("[Draco Debug] NPC Response:", res) end
+
+    if ok and DeepStrictScan(res) then
         LearnLabel.Text = "Dragon Tether: ✅ ĐÃ SỞ HỮU"
         LearnLabel.TextColor3 = Color3.new(0, 1, 0)
         return true
     else
+        -- Mặc định là chưa học nếu không thấy từ khóa khẳng định
         LearnLabel.Text = "Dragon Tether: ❌ CHƯA HỌC"
         LearnLabel.TextColor3 = Color3.new(1, 0, 0)
         return false
     end
 end
 
--- 6. TWEEN DI CHUYỂN
+-- 6. HÀM TWEEN GỐC (CỦA VŨ)
 local function toposition(Pos, onDone)
     local char = lp.Character or lp.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
@@ -102,22 +108,23 @@ local function toposition(Pos, onDone)
     end)
 end
 
--- 7. THỰC THI
+-- 7. THỰC THI CHÍNH
 local function start()
+    StatusLabel.Text = "⚡ Đang kiểm tra trạng thái..."
     if UpdateLearnStatus() then
-        StatusLabel.Text = "Thông báo: Bạn đã học rồi!"
+        StatusLabel.Text = "Thông báo: Bạn đã học rồi, không cần bay!"
         return
     end
     
     StatusLabel.Text = "🚀 Đang bay đến Dragon Wizard..."
     toposition(TargetNPC, function()
         task.wait(0.3)
-        SafeInvoke("Speak") -- Mồi
+        SafeInvoke("Speak") -- Mồi Speak
         task.wait(0.5)
         local ok, res = SafeInvoke("LearnTether")
         if ok then 
             StatusLabel.Text = "✅ Đã gửi lệnh Learn!" 
-            task.wait(1)
+            task.wait(1.5) -- Đợi server cập nhật data
             UpdateLearnStatus()
         end
     end)
@@ -131,5 +138,5 @@ ActionBtn.TextColor3 = Color3.new(1, 1, 1); ActionBtn.Font = Enum.Font.GothamBol
 Instance.new("UICorner", ActionBtn)
 ActionBtn.MouseButton1Click:Connect(function() task.spawn(start) end)
 
--- Quét ngay khi chạy script
+-- Quét trạng thái ngay khi chạy script
 task.spawn(UpdateLearnStatus)
