@@ -211,8 +211,7 @@ MasteryLabel.TextSize = 13
 MasteryLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- ==========================================
--- [ PHẦN 4 & 5 ] MAIN LOGIC & DETECT DOJO BELT (TỐI ƯU HÓA)
--- CẬP NHẬT: Gộp lệnh lấy Inventory để chống lag Server
+-- [ PHẦN 4 & 5 ] MAIN LOGIC & DETECT DOJO BELT (ĐÃ SỬA CHUẨN)
 -- ==========================================
 
 TPTradeBtn.MouseButton1Click:Connect(function()
@@ -260,39 +259,46 @@ task.spawn(function()
     end
 end)
 
--- ==========================================
 -- BỘ CÔNG CỤ XỬ LÝ INVENTORY KHÔNG GÂY LAG
--- ==========================================
 local function GetInventoryData()
     local ok, inv = pcall(function() 
         return game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("getInventory") 
     end)
-    if ok and type(inv) == "table" then
-        return inv
-    end
-    return {} -- Trả về rỗng nếu lỗi để không sập code
+    if ok and type(inv) == "table" then return inv end
+    return {}
 end
 
 local function CheckItemInInv(invData, itemName)
     local p = game.Players.LocalPlayer
-    -- Ưu tiên check trên người trước
     if p.Character and p.Character:FindFirstChild(itemName) then return true, 1 end
     if p:WaitForChild("Backpack"):FindFirstChild(itemName) then return true, 1 end
-    
-    -- Check trong mảng Inventory đã lấy
     for _, v in pairs(invData) do
-        if type(v) == "table" and v.Name == itemName then
-            return true, (v.Count or 1)
-        end
+        if type(v) == "table" and v.Name == itemName then return true, (v.Count or 1) end
     end
     return false, 0
 end
 
 -- ==========================================
--- TRÌNH QUẢN LÝ LOAD SCRIPT BANANA HUB
+-- THÊM MỚI: BỘ XỬ LÝ FILE JSON (DRAGON WIZARD)
 -- ==========================================
-_G.HubLoadedType = _G.HubLoadedType or "None"
+local HttpService = game:GetService("HttpService")
+local JsonFileName = "DRCHUB_" .. Player.Name .. ".json"
 
+local function SaveLearnStatus()
+    local data = {Status = "StatusLearnDone"}
+    pcall(function() writefile(JsonFileName, HttpService:JSONEncode(data)) end)
+end
+
+local function IsLearnDone()
+    if isfile and isfile(JsonFileName) then
+        local ok, data = pcall(function() return HttpService:JSONDecode(readfile(JsonFileName)) end)
+        return ok and data and data.Status == "StatusLearnDone"
+    end
+    return false
+end
+
+-- TRÌNH QUẢN LÝ LOAD SCRIPT BANANA HUB
+_G.HubLoadedType = _G.HubLoadedType or "None"
 local function LoadBananaHub(typeStr)
     if _G.HubLoadedType == typeStr then return end
     _G.HubLoadedType = typeStr
@@ -304,58 +310,34 @@ local function LoadBananaHub(typeStr)
         if typeStr == "Dojo" then
             ActionStatus.Text = "Hành động: Đang tải Banana Hub (Dojo)..."
             getgenv().Config = {
-                ["Select Method Farm"] = "Farm Bones",
-                ["Start Farm"] = false,
-                ["Auto Quest Dojo Trainer"] = true,
-                ["Select Zone"] = "Zone 6",
-                ["Select Boat"] = "Brigade",
-                ["Select Sea Events"] = {
-                    ["Shark"] = true,
-                    ["Terrorshark"] = true,
-                    ["Piranha"] = true,
-                    ["Ship"] = true
-                }
+                ["Select Method Farm"] = "Farm Bones", ["Start Farm"] = false, ["Auto Quest Dojo Trainer"] = true,
+                ["Select Zone"] = "Zone 6", ["Select Boat"] = "Brigade",
+                ["Select Sea Events"] = {["Shark"] = true, ["Terrorshark"] = true, ["Piranha"] = true, ["Ship"] = true}
             }
         elseif typeStr == "Golem" then
             ActionStatus.Text = "Hành động: Đang tải Banana Hub (Golem)..."
             getgenv().Config = {
-                ["Select Weapon Kill Golem"] = "Melee",
-                ["Select Method Kill Golem"] = "Click M1",
-                ["Auto Collect Bone"] = true,
-                ["Auto Collect Egg"] = true,
-                ["Ignore Craft Volcanic Magnet"] = true,
+                ["Select Weapon Kill Golem"] = "Melee", ["Select Method Kill Golem"] = "Click M1",
+                ["Auto Collect Bone"] = true, ["Auto Collect Egg"] = true, ["Ignore Craft Volcanic Magnet"] = true,
                 ["Fully Event Prehistoric Island"] = true,
-                ["Select Weapons Fix Lava"] = {
-                    ["Melee"] = true,
-                    ["Sword"] = true
-                }
+                ["Select Weapons Fix Lava"] = {["Melee"] = true, ["Sword"] = true}
             }
         elseif typeStr == "Bone" then
             ActionStatus.Text = "Hành động: Đang khởi tạo Banana Hub (Farm Bone)..."
-            getgenv().Config = {
-                ["Select Method Farm"] = "Farm Bones",
-                ["Start Farm"] = true
-            }
+            getgenv().Config = {["Select Method Farm"] = "Farm Bones", ["Start Farm"] = true}
         end
         
-        pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
-        end)
-        
+        pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))() end)
         ActionStatus.Text = "Hành động: Banana Hub (" .. typeStr .. ") đã Load!"
         if ManualDojoBtn then ManualDojoBtn.Visible = false end
     end)
 end
-
 ManualDojoBtn.MouseButton1Click:Connect(function() LoadBananaHub("Dojo") end)
 
--- ==========================================
--- LUỒNG KIỂM SOÁT TỐI THƯỢNG (CHECK 4 GIÂY / LẦN)
--- ==========================================
+-- LUỒNG KIỂM SOÁT TỐI THƯỢNG (CÓ TÍCH HỢP DRAGON WIZARD LOGIC)
 task.spawn(function()
     repeat task.wait(1) until CheckDragonTalon()
     
-    -- Lấy mốc dữ liệu ban đầu khi mới Rejoin để tránh Kick vô hạn
     local initialInv = GetInventoryData()
     local startRed, _ = CheckItemInInv(initialInv, "Dojo Belt (Red)")
     local startBlack, _ = CheckItemInInv(initialInv, "Dojo Belt (Black)")
@@ -367,50 +349,78 @@ task.spawn(function()
         if currentMastery < 500 then
             LoadBananaHub("Bone")
         else
-            -- Lấy Data DUY NHẤT 1 LẦN cho mỗi vòng lặp (Chống Lag Server 100%)
             local inv = GetInventoryData()
-            
             local hasWhite = CheckItemInInv(inv, "Dojo Belt (White)")
             local hasYellow = CheckItemInInv(inv, "Dojo Belt (Yellow)")
             local hasOrange = CheckItemInInv(inv, "Dojo Belt (Orange)")
             local hasPurple = CheckItemInInv(inv, "Dojo Belt (Purple)")
-            
             local hasRed = CheckItemInInv(inv, "Dojo Belt (Red)")
             local hasBlack = CheckItemInInv(inv, "Dojo Belt (Black)")
             local _, boneCount = CheckItemInInv(inv, "Dinosaur Bones")
             
-            -- ======================================
-            -- CƠ CHẾ SMART KICK (BẮT SỰ THAY ĐỔI)
-            -- ======================================
+            -- SMART KICK
             if hasRed and not startRed then
                 task.wait(1)
-                game.Players.LocalPlayer:Kick("\n[ Draco Hub ]\nChúc mừng! Đã sở hữu Red Belt.\nLý do: Refresh dữ liệu để chạy kịch bản Săn Dinosaur Bones.")
+                Player:Kick("\n[ Draco Hub ]\nChúc mừng! Đã sở hữu Red Belt.\nLý do: Refresh dữ liệu để chạy kịch bản Săn Dinosaur Bones.")
                 break
             end
-            
             if hasRed and boneCount >= 3 and startBones < 3 then
                 task.wait(1)
-                game.Players.LocalPlayer:Kick("\n[ Draco Hub ]\nĐã thu thập đủ " .. boneCount .. " Dinosaur Bones.\nLý do: Refresh dữ liệu để săn Black Belt.")
+                Player:Kick("\n[ Draco Hub ]\nĐã thu thập đủ " .. boneCount .. " Dinosaur Bones.\nLý do: Refresh dữ liệu để săn Black Belt.")
                 break
             end
-            
             if hasBlack and not startBlack then
                 task.wait(1)
-                game.Players.LocalPlayer:Kick("\n[ Draco Hub ]\nChúc mừng! Đã sở hữu Black Belt.\nLý do: Đã Hoàn Thành Hệ Thống! Rejoin để chạy Golem Event lần cuối.")
+                Player:Kick("\n[ Draco Hub ]\nChúc mừng! Đã sở hữu Black Belt.\nLý do: Đã Hoàn Thành Hệ Thống! Rejoin để chạy Golem Event lần cuối.")
                 break
             end
 
-            -- Cập nhật mốc mới để theo dõi
-            startRed = hasRed
-            startBones = boneCount
-            startBlack = hasBlack
+            startRed = hasRed; startBones = boneCount; startBlack = hasBlack
             
             -- ======================================
-            -- ĐIỀU HƯỚNG SCRIPT
+            -- ĐIỀU HƯỚNG SCRIPT MỚI
             -- ======================================
             if hasBlack then
-                ActionStatus.Text = "Hành động: Đã có Black Belt! Chạy Golem (Endgame)..."
-                LoadBananaHub("Golem")
+                -- CHECK JSON ĐẦU TIÊN
+                if IsLearnDone() then
+                    ActionStatus.Text = "Hành động: JSON xác nhận đã Learn! Chạy Golem (Endgame)..."
+                    LoadBananaHub("Golem")
+                else
+                    -- NẾU CHƯA CÓ JSON, CHECK BONES (>=3) ĐỂ ĐI HỌC
+                    if boneCount >= 3 then
+                        ActionStatus.Text = "Hành động: Đủ đai & xương. Delay 3s chuẩn bị học chiêu..."
+                        task.wait(3) -- Delay 3s trước khi bay
+                        
+                        TweenTo(CFrame.new(5773.936035, 1209.442871, 809.224548))
+                        
+                        ActionStatus.Text = "Hành động: Đã tới NPC. Delay 3s trước khi Speak..."
+                        task.wait(3) -- Delay 3s sau khi bay tới
+                        
+                        local Net = game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("Net")
+                        local RF = Net:FindFirstChild("RF/InteractDragonQuest") or Net:WaitForChild("RF/InteractDragonQuest", 5)
+                        
+                        if RF then
+                            ActionStatus.Text = "Hành động: Gửi lệnh Speak..."
+                            pcall(function() RF:InvokeServer({[1] = {NPC = "Dragon Wizard", Command = "Speak"}}) end)
+                            
+                            task.wait(3) -- Delay 3s sau khi Speak
+                            
+                            ActionStatus.Text = "Hành động: Gửi lệnh LearnTether..."
+                            local ok, _ = pcall(function() return RF:InvokeServer({[1] = {NPC = "Dragon Wizard", Command = "LearnTether"}}) end)
+                            
+                            if ok then
+                                ActionStatus.Text = "Hành động: Học thành công! Delay 3s lưu file..."
+                                task.wait(3) -- Delay 3s sau khi Learn xong
+                                SaveLearnStatus()
+                                ActionStatus.Text = "Hành động: Lưu xong! Bật Banana Golem..."
+                                LoadBananaHub("Golem")
+                            end
+                        end
+                    else
+                        ActionStatus.Text = "Hành động: Có Black Belt nhưng thiếu xương ("..boneCount.."/3). Farm tiếp..."
+                        LoadBananaHub("Golem")
+                    end
+                end
                 
             elseif hasRed then
                 if boneCount >= 3 then
@@ -420,16 +430,13 @@ task.spawn(function()
                     ActionStatus.Text = "Hành động: Săn Dinosaur Bones (" .. boneCount .. "/3)..."
                     LoadBananaHub("Golem")
                 end
-                
             elseif hasPurple then
                 ActionStatus.Text = "Hành động: Đã có Purple! Săn Red Belt..."
                 LoadBananaHub("Dojo")
-                
             elseif hasWhite and hasYellow and not hasOrange then
                 ActionStatus.Text = "Tạm dừng Auto Dojo vì thiếu Orange Belt. Bật thủ công!"
                 ActionStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
                 if ManualDojoBtn then ManualDojoBtn.Visible = true end
-                
             else
                 LoadBananaHub("Dojo")
             end
