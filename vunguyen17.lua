@@ -211,7 +211,7 @@ MasteryLabel.TextSize = 13
 MasteryLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- ==========================================
--- [ PHẦN 4 & 5 ] MAIN LOGIC & DETECT DOJO BELT (ĐÃ SỬA CHUẨN)
+-- [ PHẦN 4 & 5 ] MAIN LOGIC & DETECT DOJO BELT (Y NGUYÊN BẢN 2)
 -- ==========================================
 
 TPTradeBtn.MouseButton1Click:Connect(function()
@@ -279,7 +279,7 @@ local function CheckItemInInv(invData, itemName)
 end
 
 -- ==========================================
--- THÊM MỚI: BỘ XỬ LÝ FILE JSON (DRAGON WIZARD)
+-- BỘ XỬ LÝ FILE JSON (DRAGON WIZARD)
 -- ==========================================
 local HttpService = game:GetService("HttpService")
 local JsonFileName = "DRCHUB_" .. Player.Name .. ".json"
@@ -332,9 +332,8 @@ local function LoadBananaHub(typeStr)
         if ManualDojoBtn then ManualDojoBtn.Visible = false end
     end)
 end
-ManualDojoBtn.MouseButton1Click:Connect(function() LoadBananaHub("Dojo") end)
 
--- LUỒNG KIỂM SOÁT TỐI THƯỢNG (CÓ TÍCH HỢP DRAGON WIZARD LOGIC)
+-- LUỒNG KIỂM SOÁT TỐI THƯỢNG (TÍCH HỢP DRAGON WIZARD LOGIC TỪ BẢN 2)
 task.spawn(function()
     repeat task.wait(1) until CheckDragonTalon()
     
@@ -359,60 +358,50 @@ task.spawn(function()
             local _, boneCount = CheckItemInInv(inv, "Dinosaur Bones")
             
             -- SMART KICK
-            if hasRed and not startRed then
-                task.wait(1)
-                Player:Kick("\n[ Draco Hub ]\nChúc mừng! Đã sở hữu Red Belt.\nLý do: Refresh dữ liệu để chạy kịch bản Săn Dinosaur Bones.")
-                break
-            end
-            if hasRed and boneCount >= 3 and startBones < 3 then
-                task.wait(1)
-                Player:Kick("\n[ Draco Hub ]\nĐã thu thập đủ " .. boneCount .. " Dinosaur Bones.\nLý do: Refresh dữ liệu để săn Black Belt.")
-                break
-            end
-            if hasBlack and not startBlack then
-                task.wait(1)
-                Player:Kick("\n[ Draco Hub ]\nChúc mừng! Đã sở hữu Black Belt.\nLý do: Đã Hoàn Thành Hệ Thống! Rejoin để chạy Golem Event lần cuối.")
-                break
-            end
+            if hasRed and not startRed then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Red Belt."); break end
+            if hasRed and boneCount >= 3 and startBones < 3 then task.wait(1); Player:Kick("\n[ Draco Hub ]\nĐủ 3 Bones."); break end
+            if hasBlack and not startBlack then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Black Belt."); break end
 
             startRed = hasRed; startBones = boneCount; startBlack = hasBlack
             
             -- ======================================
-            -- ĐIỀU HƯỚNG SCRIPT MỚI
+            -- ĐIỀU HƯỚNG SCRIPT
             -- ======================================
             if hasBlack then
-                -- CHECK JSON ĐẦU TIÊN
                 if IsLearnDone() then
-                    ActionStatus.Text = "Hành động: JSON xác nhận đã Learn! Chạy Golem (Endgame)..."
+                    ActionStatus.Text = "Hành động: LearnDone (JSON)! Chạy Banana Golem..."
                     LoadBananaHub("Golem")
                 else
-                    -- NẾU CHƯA CÓ JSON, CHECK BONES (>=3) ĐỂ ĐI HỌC
                     if boneCount >= 3 then
-                        ActionStatus.Text = "Hành động: Đủ đai & xương. Delay 3s chuẩn bị học chiêu..."
-                        task.wait(3) -- Delay 3s trước khi bay
+                        ActionStatus.Text = "Hành động: Đủ Black Belt & Bones! Delay 3s Tween..."
+                        task.wait(3)
                         
+                        -- Tọa độ TargetNPC từ bản script 2
                         TweenTo(CFrame.new(5773.936035, 1209.442871, 809.224548))
                         
                         ActionStatus.Text = "Hành động: Đã tới NPC. Delay 3s trước khi Speak..."
-                        task.wait(3) -- Delay 3s sau khi bay tới
+                        task.wait(3)
                         
+                        -- LOGIC SPEAK & LEARN Y HỆT BẢN SCRIPT THỨ 2 CỦA CẬU
                         local Net = game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("Net")
-                        local RF = Net:FindFirstChild("RF/InteractDragonQuest") or Net:WaitForChild("RF/InteractDragonQuest", 5)
+                        local RF = Net:FindFirstChild("RF/InteractDragonQuest") or Net["RF/InteractDragonQuest"]
                         
                         if RF then
-                            ActionStatus.Text = "Hành động: Gửi lệnh Speak..."
-                            pcall(function() RF:InvokeServer({[1] = {NPC = "Dragon Wizard", Command = "Speak"}}) end)
+                            -- Bước 1: Speak (Mồi hội thoại y hệt bản 2)
+                            local v371_Speak = { [1] = { NPC = "Dragon Wizard", Command = "Speak" } }
+                            pcall(function() RF:InvokeServer(unpack(v371_Speak)) end)
                             
                             task.wait(3) -- Delay 3s sau khi Speak
                             
-                            ActionStatus.Text = "Hành động: Gửi lệnh LearnTether..."
-                            local ok, _ = pcall(function() return RF:InvokeServer({[1] = {NPC = "Dragon Wizard", Command = "LearnTether"}}) end)
+                            -- Bước 2: LearnTether (Y hệt bản 2)
+                            local v371_Learn = { [1] = { NPC = "Dragon Wizard", Command = "LearnTether" } }
+                            local ok, _ = pcall(function() return RF:InvokeServer(unpack(v371_Learn)) end)
                             
                             if ok then
                                 ActionStatus.Text = "Hành động: Học thành công! Delay 3s lưu file..."
-                                task.wait(3) -- Delay 3s sau khi Learn xong
+                                task.wait(3)
                                 SaveLearnStatus()
-                                ActionStatus.Text = "Hành động: Lưu xong! Bật Banana Golem..."
+                                ActionStatus.Text = "Hành động: Đã lưu! Chuyển sang Golem..."
                                 LoadBananaHub("Golem")
                             end
                         end
@@ -421,25 +410,13 @@ task.spawn(function()
                         LoadBananaHub("Golem")
                     end
                 end
-                
             elseif hasRed then
-                if boneCount >= 3 then
-                    ActionStatus.Text = "Hành động: Red Belt + " .. boneCount .. " Bones! Farm Dojo & Check Black..."
-                    LoadBananaHub("Dojo")
-                else
-                    ActionStatus.Text = "Hành động: Săn Dinosaur Bones (" .. boneCount .. "/3)..."
-                    LoadBananaHub("Golem")
-                end
-            elseif hasPurple then
-                ActionStatus.Text = "Hành động: Đã có Purple! Săn Red Belt..."
-                LoadBananaHub("Dojo")
+                if boneCount >= 3 then ActionStatus.Text = "Hành động: Farm Dojo & Check Black..."; LoadBananaHub("Dojo")
+                else ActionStatus.Text = "Hành động: Săn Dinosaur Bones (" .. boneCount .. "/3)..."; LoadBananaHub("Golem") end
+            elseif hasPurple then ActionStatus.Text = "Hành động: Săn Red Belt..."; LoadBananaHub("Dojo")
             elseif hasWhite and hasYellow and not hasOrange then
-                ActionStatus.Text = "Tạm dừng Auto Dojo vì thiếu Orange Belt. Bật thủ công!"
-                ActionStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
-                if ManualDojoBtn then ManualDojoBtn.Visible = true end
-            else
-                LoadBananaHub("Dojo")
-            end
+                ActionStatus.Text = "Thiếu Orange Belt. Bật thủ công!"; if ManualDojoBtn then ManualDojoBtn.Visible = true end
+            else LoadBananaHub("Dojo") end
         end
     end
 end)
