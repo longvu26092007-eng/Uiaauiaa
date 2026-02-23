@@ -1,10 +1,9 @@
 -- =============================================================
--- DRACO HUB - DRAGON WIZARD (ONLY BUY BUTTON)
--- Style: Bám sát Modules.Net - Không di chuyển
+-- DRACO HUB - DRAGON WIZARD (FIXED TABLE INDEX)
+-- Style: Bám sát Modules.Net - Dùng ngoặc vuông để gọi Remote
 -- =============================================================
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local lp = game.Players.LocalPlayer
 
 -- 1. TẠO GIAO DIỆN NHỎ GỌN
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
@@ -13,7 +12,7 @@ Main.Size = UDim2.new(0, 250, 0, 120)
 Main.Position = UDim2.new(0.5, -125, 0.4, 0)
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Main.Active = true
-Main.Draggable = true -- Cho phép cậu kéo bảng đi chỗ khác cho đỡ vướng
+Main.Draggable = true 
 Instance.new("UICorner", Main)
 Instance.new("UIStroke", Main).Color = Color3.fromRGB(255, 200, 0)
 
@@ -25,21 +24,25 @@ StatusLabel.TextColor3 = Color3.new(0.8, 0.8, 0.8)
 StatusLabel.BackgroundTransparency = 1
 StatusLabel.Font = Enum.Font.Gotham
 
--- 2. ĐỊNH NGHĨA NET INVOKER (Đúng chuẩn RF/InteractDragonQuest của cậu)
-local InteractRF = ReplicatedStorage:WaitForChild("Modules")
-    :WaitForChild("Net")
-    :WaitForChild("RF/InteractDragonQuest")
+-- 2. ĐỊNH NGHĨA NET INVOKER (FIX LỖI DẤU GẠCH CHÉO /)
+-- Thay vì gọi .RF/Interact... ta dùng ["RF/InteractDragonQuest"]
+local NetFolder = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net")
+local InteractRF = NetFolder:WaitForChild("RF/InteractDragonQuest")
 
 local function FastPurchase()
     -- Lần 1: Mở bảng hội thoại
     StatusLabel.Text = "⚡ Đang mở bảng..."
-    pcall(function() InteractRF:InvokeServer({}) end)
+    pcall(function() 
+        InteractRF:InvokeServer({}) 
+    end)
     
-    task.wait(0.8) -- Đợi bảng hiện (Cậu có thể giảm xuống 0.5 nếu mạng khỏe)
+    task.wait(0.8) -- Đợi bảng hiện
     
     -- Lần 2: Chốt lệnh Mua/Học
     StatusLabel.Text = "🔥 Đang chốt mua..."
-    local ok, res = pcall(function() return InteractRF:InvokeServer({}) end)
+    local ok, res = pcall(function() 
+        return InteractRF:InvokeServer({}) 
+    end)
     
     if ok then
         StatusLabel.Text = "✅ Thành công!"
