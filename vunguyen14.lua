@@ -211,43 +211,10 @@ MasteryLabel.TextSize = 13
 MasteryLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- ==========================================
--- [ PHẦN 5 ] DETECT DOJO BELT & MATERIAL
--- CHỈNH SỬA & NÂNG CẤP BỞI VŨ NGUYỄN
+-- [ PHẦN 4 & 5 ] MAIN LOGIC & DETECT DOJO BELT (TỐI ƯU HÓA)
+-- CẬP NHẬT: Gộp lệnh lấy Inventory để chống lag Server
 -- ==========================================
 
--- 1. Hàm kiểm tra Đai (Belt)
-local function CheckDojoBelt(beltName)
-    local p = game.Players.LocalPlayer
-    if p.Character and p.Character:FindFirstChild(beltName) then return true end
-    if p:WaitForChild("Backpack"):FindFirstChild(beltName) then return true end
-    
-    local ok, inv = pcall(function() return game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("getInventory") end)
-    if ok and type(inv) == "table" then
-        for _, v in pairs(inv) do
-            if type(v) == "table" and v.Name == beltName then
-                return true
-            end
-        end
-    end
-    return false
-end
-
--- 2. Hàm đếm số lượng nguyên liệu (Dinosaur Bones)
-local function GetMaterialCount(matName)
-    local ok, inv = pcall(function() return game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("getInventory") end)
-    if ok and type(inv) == "table" then
-        for _, v in pairs(inv) do
-            if type(v) == "table" and v.Name == matName then
-                return v.Count or 1
-            end
-        end
-    end
-    return 0
-end
-
--- ==========================================
--- [ PHẦN 4 ] MAIN AUTO LOGIC (TÍCH HỢP ĐIỀU KIỆN PHẦN 5)
--- ==========================================
 TPTradeBtn.MouseButton1Click:Connect(function()
     task.spawn(function()
         ActionStatus.Text = "Hành động: Đang bay đến bàn Trade..."
@@ -293,181 +260,178 @@ task.spawn(function()
     end
 end)
 
-_G.hubLoaded = false
-
--- Hàm chạy kịch bản Banana Dojo (Tím, Hoặc khi đủ Xương)
-local function LoadBananaHubDojo()
-    if not _G.hubLoaded then
-        _G.hubLoaded = true
-        ActionStatus.Text = "Hành động: Đang tải Banana Hub (Dojo)..."
-        task.wait(2)
-        
-        repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer 
-        getgenv().Key = "51e126ee832d3c4fff7b6178" 
-        getgenv().NewUI = true
-        getgenv().Config = {
-            ["Select Method Farm"] = "Farm Bones",
-            ["Start Farm"] = false,
-            ["Auto Quest Dojo Trainer"] = true,
-            ["Select Zone"] = "Zone 6",
-            ["Select Boat"] = "Brigade",
-            ["Select Sea Events"] = {
-                ["Shark"] = true,
-                ["Terrorshark"] = true,
-                ["Piranha"] = true,
-                ["Ship"] = true
-            }
-        }
-        
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
-        ActionStatus.Text = "Hành động: Banana Hub (Dojo) đã load xong!"
-        ManualDojoBtn.Visible = false
+-- ==========================================
+-- BỘ CÔNG CỤ XỬ LÝ INVENTORY KHÔNG GÂY LAG
+-- ==========================================
+local function GetInventoryData()
+    local ok, inv = pcall(function() 
+        return game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("getInventory") 
+    end)
+    if ok and type(inv) == "table" then
+        return inv
     end
+    return {} -- Trả về rỗng nếu lỗi để không sập code
 end
 
--- Hàm chạy kịch bản Golem Event (Săn xương / Khi đã có Black Belt)
-local function LoadBananaHubGolem()
-    if not _G.hubLoaded then
-        _G.hubLoaded = true
-        ActionStatus.Text = "Hành động: Đang tải Banana Hub (Golem)..."
-        getgenv().Key = "51e126ee832d3c4fff7b6178" 
-        getgenv().NewUI = true
-        getgenv().Config = {
-            ["Select Weapon Kill Golem"] = "Melee",
-            ["Select Method Kill Golem"] = "Click M1",
-            ["Auto Collect Bone"] = true,
-            ["Auto Collect Egg"] = true,
-            ["Ignore Craft Volcanic Magnet"] = true,
-            ["Fully Event Prehistoric Island"] = true,
-            ["Select Weapons Fix Lava"] = {
-                ["Melee"] = true,
-                ["Sword"] = true
-            }
-        }
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
-        ActionStatus.Text = "Hành động: Banana Hub Event (Golem) đã Load!"
+local function CheckItemInInv(invData, itemName)
+    local p = game.Players.LocalPlayer
+    -- Ưu tiên check trên người trước
+    if p.Character and p.Character:FindFirstChild(itemName) then return true, 1 end
+    if p:WaitForChild("Backpack"):FindFirstChild(itemName) then return true, 1 end
+    
+    -- Check trong mảng Inventory đã lấy
+    for _, v in pairs(invData) do
+        if type(v) == "table" and v.Name == itemName then
+            return true, (v.Count or 1)
+        end
     end
+    return false, 0
 end
 
-ManualDojoBtn.MouseButton1Click:Connect(LoadBananaHubDojo)
+-- ==========================================
+-- TRÌNH QUẢN LÝ LOAD SCRIPT BANANA HUB
+-- ==========================================
+_G.HubLoadedType = _G.HubLoadedType or "None"
 
--- LUỒNG KIỂM TRA CHÍNH LỒNG GHÉP LOGIC PHẦN 5
-task.spawn(function()
-    repeat task.wait(1) until CheckDragonTalon()
+local function LoadBananaHub(typeStr)
+    if _G.HubLoadedType == typeStr then return end
+    _G.HubLoadedType = typeStr
     
-    local currentMastery = GetWeaponMastery("Dragon Talon")
-    
-    if currentMastery < 500 then
-        -- AUTO FARM BONE NẾU CHƯA ĐỦ MASTERY
-        if not _G.hubLoaded then
-            _G.hubLoaded = true
+    task.spawn(function()
+        getgenv().Key = "51e126ee832d3c4fff7b6178" 
+        getgenv().NewUI = true
+        
+        if typeStr == "Dojo" then
+            ActionStatus.Text = "Hành động: Đang tải Banana Hub (Dojo)..."
+            getgenv().Config = {
+                ["Select Method Farm"] = "Farm Bones",
+                ["Start Farm"] = false,
+                ["Auto Quest Dojo Trainer"] = true,
+                ["Select Zone"] = "Zone 6",
+                ["Select Boat"] = "Brigade",
+                ["Select Sea Events"] = {
+                    ["Shark"] = true,
+                    ["Terrorshark"] = true,
+                    ["Piranha"] = true,
+                    ["Ship"] = true
+                }
+            }
+        elseif typeStr == "Golem" then
+            ActionStatus.Text = "Hành động: Đang tải Banana Hub (Golem)..."
+            getgenv().Config = {
+                ["Select Weapon Kill Golem"] = "Melee",
+                ["Select Method Kill Golem"] = "Click M1",
+                ["Auto Collect Bone"] = true,
+                ["Auto Collect Egg"] = true,
+                ["Ignore Craft Volcanic Magnet"] = true,
+                ["Fully Event Prehistoric Island"] = true,
+                ["Select Weapons Fix Lava"] = {
+                    ["Melee"] = true,
+                    ["Sword"] = true
+                }
+            }
+        elseif typeStr == "Bone" then
             ActionStatus.Text = "Hành động: Đang khởi tạo Banana Hub (Farm Bone)..."
-            task.wait(3)
-            
-            repeat task.wait() until game:IsLoaded() and game.Players.LocalPlayer 
-            getgenv().Key = "51e126ee832d3c4fff7b6178" 
-            getgenv().NewUI = true
             getgenv().Config = {
                 ["Select Method Farm"] = "Farm Bones",
                 ["Start Farm"] = true
             }
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
-            ActionStatus.Text = "Hành động: Banana Hub (Farm Bone) đã load xong!"
         end
-    else
-        -- KHI ĐÃ ĐẠT 500 MASTERY: VÒNG LẶP KIỂM TRA ĐAI VÀ NGUYÊN LIỆU (PHẦN 5)
-        while task.wait(1) do
-            local hasWhite = CheckDojoBelt("Dojo Belt (White)")
-            local hasYellow = CheckDojoBelt("Dojo Belt (Yellow)")
-            local hasOrange = CheckDojoBelt("Dojo Belt (Orange)")
-            local hasPurple = CheckDojoBelt("Dojo Belt (Purple)")
-            local hasRed = CheckDojoBelt("Dojo Belt (Red)")
-            local hasBlack = CheckDojoBelt("Dojo Belt (Black)")
+        
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
+        end)
+        
+        ActionStatus.Text = "Hành động: Banana Hub (" .. typeStr .. ") đã Load!"
+        if ManualDojoBtn then ManualDojoBtn.Visible = false end
+    end)
+end
 
-            -- 1. NẾU ĐÃ CÓ BLACK BELT: KÍCH HOẠT GOLEM LẦN CUỐI
-            if hasBlack then
-                ActionStatus.Text = "Hành động: Đã có Black Belt! Đang chờ 5s chạy Golem..."
-                task.wait(5)
-                LoadBananaHubGolem()
-                break -- Kết thúc hoàn toàn vòng lặp
+ManualDojoBtn.MouseButton1Click:Connect(function() LoadBananaHub("Dojo") end)
 
-            -- 2. NẾU CÓ RED NHƯNG CHƯA CÓ BLACK
-            elseif hasRed and not hasBlack then
-                local boneCount = GetMaterialCount("Dinosaur Bones")
-                
-                -- TRƯỜNG HỢP A: ĐÃ CÓ 3 ĐẾN 5 XƯƠNG -> CHẠY DOJO NHƯ LÚC PURPLE & CHECK BLACK
-                if boneCount >= 3 then
-                    ActionStatus.Text = "Hành động: Red Belt + " .. boneCount .. " Bones! Farm Dojo & Check Black (4s)..."
-                    LoadBananaHubDojo()
-
-                    -- Vòng lặp check đai Đen mỗi 4 giây
-                    repeat
-                        task.wait(4)
-                        hasBlack = CheckDojoBelt("Dojo Belt (Black)")
-                    until hasBlack or not game.Players.LocalPlayer
-
-                    if hasBlack then
-                        ActionStatus.Text = "Hành động: ĐÃ CÓ BLACK BELT! ĐANG KICK..."
-                        ActionStatus.TextColor3 = Color3.fromRGB(0, 255, 0)
-                        task.wait(2)
-                        game.Players.LocalPlayer:Kick("\n[ Draco Hub ]\nChúc mừng! Bạn đã sở hữu Black Belt.\nLý do: Đã đủ điều kiện, Kick để Rejoin chạy Golem Event.")
-                        break
-                    end
-                
-                -- TRƯỜNG HỢP B: CHƯA ĐỦ 3 XƯƠNG -> CHẠY GOLEM & CHECK XƯƠNG MỖI 10 GIÂY
-                else
-                    ActionStatus.Text = "Hành động: Red Belt! Khởi chạy Script Golem săn Bones..."
-                    task.wait(5)
-                    LoadBananaHubGolem()
-
-                    -- Vòng lặp check Xương Khủng Long mỗi 10 giây
-                    repeat
-                        task.wait(10)
-                        boneCount = GetMaterialCount("Dinosaur Bones")
-                        if ActionStatus then 
-                            ActionStatus.Text = "Hành động: Đang săn Dinosaur Bones (" .. boneCount .. "/3)..." 
-                        end
-                    until boneCount >= 3 or not game.Players.LocalPlayer
-
-                    if boneCount >= 3 then
-                        ActionStatus.Text = "Hành động: ĐÃ ĐỦ 3 DINOSAUR BONES! ĐANG KICK..."
-                        ActionStatus.TextColor3 = Color3.fromRGB(0, 255, 0)
-                        task.wait(2)
-                        game.Players.LocalPlayer:Kick("\n[ Draco Hub ]\nĐã thu thập đủ Dinosaur Bones (" .. boneCount .. "/3).\nLý do: Kick để Rejoin chuyển sang Farm Black Belt.")
-                        break
-                    end
-                end
-
-            -- 3. NẾU CÓ PURPLE NHƯNG CHƯA CÓ RED (Vòng lặp check Red mỗi 15s)
-            elseif hasPurple and not hasRed then
-                ActionStatus.Text = "Hành động: Đã có Purple! Đang đợi săn Red Belt (Check 15s)..."
-                ActionStatus.TextColor3 = Color3.fromRGB(255, 255, 0)
-                LoadBananaHubDojo()
-
-                repeat 
-                    task.wait(15) 
-                    hasRed = CheckDojoBelt("Dojo Belt (Red)")
-                until hasRed or not game.Players.LocalPlayer
-
-                if hasRed then
-                    ActionStatus.Text = "Hành động: ĐÃ CÓ RED BELT! ĐANG KICK..."
-                    ActionStatus.TextColor3 = Color3.fromRGB(0, 255, 0)
-                    task.wait(2)
-                    game.Players.LocalPlayer:Kick("\n[ Draco Hub ]\nChúc mừng! Đã sở hữu Red Belt.\nLý do: Kick để Rejoin nhận diện đai mới.\nScript sẽ tự động chạy cấu hình Golem sau 5 giây.")
-                    break
-                end
-
-            -- 4. BẢO VỆ ORANGE BELT
-            elseif hasWhite and hasYellow and not hasOrange then
-                ActionStatus.Text = "Tạm dừng Auto Dojo vì thiếu Orange Belt. Hãy bật thủ công!"
-                ActionStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
-                ManualDojoBtn.Visible = true
+-- ==========================================
+-- LUỒNG KIỂM SOÁT TỐI THƯỢNG (CHECK 4 GIÂY / LẦN)
+-- ==========================================
+task.spawn(function()
+    repeat task.wait(1) until CheckDragonTalon()
+    
+    -- Lấy mốc dữ liệu ban đầu khi mới Rejoin để tránh Kick vô hạn
+    local initialInv = GetInventoryData()
+    local startRed, _ = CheckItemInInv(initialInv, "Dojo Belt (Red)")
+    local startBlack, _ = CheckItemInInv(initialInv, "Dojo Belt (Black)")
+    local _, startBones = CheckItemInInv(initialInv, "Dinosaur Bones")
+    
+    while task.wait(4) do
+        local currentMastery = GetWeaponMastery("Dragon Talon")
+        
+        if currentMastery < 500 then
+            LoadBananaHub("Bone")
+        else
+            -- Lấy Data DUY NHẤT 1 LẦN cho mỗi vòng lặp (Chống Lag Server 100%)
+            local inv = GetInventoryData()
+            
+            local hasWhite = CheckItemInInv(inv, "Dojo Belt (White)")
+            local hasYellow = CheckItemInInv(inv, "Dojo Belt (Yellow)")
+            local hasOrange = CheckItemInInv(inv, "Dojo Belt (Orange)")
+            local hasPurple = CheckItemInInv(inv, "Dojo Belt (Purple)")
+            
+            local hasRed = CheckItemInInv(inv, "Dojo Belt (Red)")
+            local hasBlack = CheckItemInInv(inv, "Dojo Belt (Black)")
+            local _, boneCount = CheckItemInInv(inv, "Dinosaur Bones")
+            
+            -- ======================================
+            -- CƠ CHẾ SMART KICK (BẮT SỰ THAY ĐỔI)
+            -- ======================================
+            if hasRed and not startRed then
+                task.wait(1)
+                game.Players.LocalPlayer:Kick("\n[ Draco Hub ]\nChúc mừng! Đã sở hữu Red Belt.\nLý do: Refresh dữ liệu để chạy kịch bản Săn Dinosaur Bones.")
                 break
+            end
+            
+            if hasRed and boneCount >= 3 and startBones < 3 then
+                task.wait(1)
+                game.Players.LocalPlayer:Kick("\n[ Draco Hub ]\nĐã thu thập đủ " .. boneCount .. " Dinosaur Bones.\nLý do: Refresh dữ liệu để săn Black Belt.")
+                break
+            end
+            
+            if hasBlack and not startBlack then
+                task.wait(1)
+                game.Players.LocalPlayer:Kick("\n[ Draco Hub ]\nChúc mừng! Đã sở hữu Black Belt.\nLý do: Đã Hoàn Thành Hệ Thống! Rejoin để chạy Golem Event lần cuối.")
+                break
+            end
 
-            -- 5. CÁC TRƯỜNG HỢP CÒN LẠI (Chưa có gì, Green, Blue)
+            -- Cập nhật mốc mới để theo dõi
+            startRed = hasRed
+            startBones = boneCount
+            startBlack = hasBlack
+            
+            -- ======================================
+            -- ĐIỀU HƯỚNG SCRIPT
+            -- ======================================
+            if hasBlack then
+                ActionStatus.Text = "Hành động: Đã có Black Belt! Chạy Golem (Endgame)..."
+                LoadBananaHub("Golem")
+                
+            elseif hasRed then
+                if boneCount >= 3 then
+                    ActionStatus.Text = "Hành động: Red Belt + " .. boneCount .. " Bones! Farm Dojo & Check Black..."
+                    LoadBananaHub("Dojo")
+                else
+                    ActionStatus.Text = "Hành động: Săn Dinosaur Bones (" .. boneCount .. "/3)..."
+                    LoadBananaHub("Golem")
+                end
+                
+            elseif hasPurple then
+                ActionStatus.Text = "Hành động: Đã có Purple! Săn Red Belt..."
+                LoadBananaHub("Dojo")
+                
+            elseif hasWhite and hasYellow and not hasOrange then
+                ActionStatus.Text = "Tạm dừng Auto Dojo vì thiếu Orange Belt. Bật thủ công!"
+                ActionStatus.TextColor3 = Color3.fromRGB(255, 100, 100)
+                if ManualDojoBtn then ManualDojoBtn.Visible = true end
+                
             else
-                LoadBananaHubDojo()
-                task.wait(5) -- Tránh lag vòng lặp khi đang chạy các đai thấp
+                LoadBananaHub("Dojo")
             end
         end
     end
