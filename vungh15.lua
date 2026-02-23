@@ -1,6 +1,6 @@
 -- =============================================================
--- DRACO HUB - DRAGON WIZARD (DIRECT TWEEN VERSION)
--- Lộ trình: Tween -> Speak -> LearnTether (Không dùng Portal)
+-- DRACO HUB - DRAGON WIZARD (AUTO EXECUTE VERSION)
+-- Lộ trình: Tự động chạy ngay khi Execute -> Tween -> Speak -> LearnTether
 -- Style: Bám sát cấu trúc Dictionary & Tween của Vũ Nguyễn
 -- =============================================================
 
@@ -22,7 +22,7 @@ local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = "DracoWizardDirect"
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 300, 0, 160)
+Main.Size = UDim2.new(0, 300, 0, 100) -- Thu gọn vì bỏ nút
 Main.Position = UDim2.new(0.5, -150, 0.4, 0)
 Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 Main.Active = true; Main.Draggable = true
@@ -30,11 +30,11 @@ Instance.new("UIStroke", Main).Color = Color3.fromRGB(255, 200, 0)
 Instance.new("UICorner", Main)
 
 local StatusLabel = Instance.new("TextLabel", Main)
-StatusLabel.Size = UDim2.new(1, -20, 0, 60); StatusLabel.Position = UDim2.new(0, 10, 0, 10)
-StatusLabel.Text = "Hệ thống: Sẵn sàng...\nChế độ: Bay trực tiếp (No Portal)"; StatusLabel.TextColor3 = Color3.new(1, 1, 1)
+StatusLabel.Size = UDim2.new(1, -20, 1, -20); StatusLabel.Position = UDim2.new(0, 10, 0, 10)
+StatusLabel.Text = "Hệ thống: Đang khởi động kịch bản tự động..."; StatusLabel.TextColor3 = Color3.new(1, 1, 1)
 StatusLabel.BackgroundTransparency = 1; StatusLabel.Font = Enum.Font.GothamBold; StatusLabel.TextSize = 13; StatusLabel.TextWrapped = true
 
--- 3. HÀM TWEEN GỐC (ĐÃ TỐI ƯU)
+-- 3. HÀM TWEEN GỐC (GIỮ NGUYÊN)
 local function toposition(Pos, onDone)
     local char = lp.Character or lp.CharacterAdded:Wait()
     local hrp = char:WaitForChild("HumanoidRootPart")
@@ -76,8 +76,8 @@ local function toposition(Pos, onDone)
     end)
 end
 
--- 4. HÀM THỰC THI LỆNH SPEAK & LEARN
-local function executeDragonLearn()
+-- 4. HÀM THỰC THI TỰ ĐỘNG
+local function executeDragonAuto()
     StatusLabel.Text = "⚡ Đang bay trực tiếp đến Dragon Wizard..."
     StatusLabel.TextColor3 = Color3.new(1, 1, 1)
 
@@ -104,6 +104,8 @@ local function executeDragonLearn()
         if ok then
             StatusLabel.Text = "✅ THÀNH CÔNG!\nĐã học xong Dragon Tether."
             StatusLabel.TextColor3 = Color3.new(0, 1, 0)
+            task.wait(5)
+            -- ScreenGui:Destroy() -- Có thể mở dòng này nếu muốn ẩn UI sau khi xong
         else
             StatusLabel.Text = "❌ THẤT BẠI!\nLỗi: " .. tostring(res)
             StatusLabel.TextColor3 = Color3.new(1, 0, 0)
@@ -111,13 +113,5 @@ local function executeDragonLearn()
     end)
 end
 
--- 5. NÚT BẤM TEST
-local ActionBtn = Instance.new("TextButton", Main)
-ActionBtn.Size = UDim2.new(0, 220, 0, 45); ActionBtn.Position = UDim2.new(0.5, -110, 0.65, 0)
-ActionBtn.Text = "TWEEN & LEARN"; ActionBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
-ActionBtn.TextColor3 = Color3.new(1, 1, 1); ActionBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", ActionBtn)
-
-ActionBtn.MouseButton1Click:Connect(function()
-    task.spawn(executeDragonLearn)
-end)
+-- 5. KÍCH HOẠT TỰ ĐỘNG (NGAY KHI EXECUTE)
+task.spawn(executeDragonAuto)
