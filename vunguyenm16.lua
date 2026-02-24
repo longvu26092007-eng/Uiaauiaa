@@ -424,11 +424,9 @@ local function IsDracoDetected()
     return string.find(race, "Draco") ~= nil or string.find(race, "Dragon") ~= nil
 end
 
--- === [CẬP NHẬT PHẦN 6] ĐỌC VÀ KIỂM TRA CHỈ SỐ STAT HIỆN TẠI ===
 local function GetStatValue(statName)
     local val = 0
     pcall(function()
-        -- Theo cấu trúc Blox Fruits: Player.Data.Stats.StatName.Level
         local statsFolder = Player:FindFirstChild("Data") and Player.Data:FindFirstChild("Stats")
         if statsFolder and statsFolder:FindFirstChild(statName) then
             val = statsFolder[statName].Level.Value
@@ -437,14 +435,11 @@ local function GetStatValue(statName)
     return val
 end
 
--- Check stats đã đúng build chưa: Ngưỡng tối thiểu 2800 (Max là 2550 nhưng script cũ để 2800)
 local function IsStatCorrect(buildType)
     local melee = GetStatValue("Melee")
     local defense = GetStatValue("Defense")
-    
     if buildType == "Sword" then
         local sword = GetStatValue("Sword")
-        -- Nếu Melee, Defense, Sword đều >= 2550 (hoặc 2800 theo logic cũ) thì coi như đã reset rồi
         return (melee >= 2500 and defense >= 2500 and sword >= 2500)
     elseif buildType == "Gun" then
         local gun = GetStatValue("Gun")
@@ -453,7 +448,6 @@ local function IsStatCorrect(buildType)
     return false
 end
 
--- === STAT RESET & ADD POINT (tham khảo StatTool) ===
 local function ResetStat()
     local CommF = game:GetService("ReplicatedStorage").Remotes.CommF_
     pcall(function() CommF:InvokeServer("BlackbeardReward", "Refund", "1") end)
@@ -468,7 +462,6 @@ local function AddStatPoint(statName, amount)
     end)
 end
 
--- FIX: Chỉ reset nếu stats hiện tại không trùng với build mong muốn
 local function DoStatSword()
     if IsStatCorrect("Sword") then 
         warn("[Draco Hub] Stats hiện tại đã đúng build Sword, bỏ qua Reset.")
@@ -497,7 +490,6 @@ local function DoStatGun()
     AddStatPoint("Gun",     2800)
 end
 
--- === EQUIP WEAPON ===
 local function CheckHasWeapon(weaponName)
     local bp  = Player:FindFirstChild("Backpack")
     local chr = Player.Character
@@ -511,20 +503,6 @@ local function EquipWeapon(weaponName)
         local chr = Player.Character
         if chr and chr:FindFirstChild(weaponName) then return end
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("LoadItem", weaponName)
-    end)
-end
-
--- === GHI BLAZE EMBER VÀO PlayerName.json ===
-local BlazeJsonFile = Player.Name .. ".json"
-local function SaveBlazeEmberCount(count)
-    pcall(function()
-        local jdata = {}
-        if isfile and isfile(BlazeJsonFile) then
-            local ok2, d = pcall(function() return HttpService:JSONDecode(readfile(BlazeJsonFile)) end)
-            if ok2 and type(d) == "table" then jdata = d end
-        end
-        jdata.BlazeEmber = count
-        writefile(BlazeJsonFile, HttpService:JSONEncode(jdata))
     end)
 end
 
@@ -608,15 +586,8 @@ local function LoadBananaHub(typeStr)
     end)
 end
 
-ManualDojoBtn.MouseButton1Click:Connect(function()
-    _G.HubLoadedType = "None"
-    LoadBananaHub("Dojo")
-    ManualDojoBtn.Visible = false
-    ActionStatus.Text = "Hành động: Đã bật Script Dojo thủ công!"
-end)
-
 -- ==========================================
--- LUỒNG KIỂM SOÁT TỐI THƯỢNG (ĐÃ CẬP NHẬT THEO YÊU CẦU CỦA VŨ)
+-- LUỒNG KIỂM SOÁT TỐI THƯỢNG
 -- ==========================================
 task.spawn(function()
     repeat task.wait(1) until CheckDragonTalon()
@@ -626,15 +597,11 @@ task.spawn(function()
     local startBlack, _ = CheckItemInInv(initialInv, "Dojo Belt (Black)")
     local _, startBones = CheckItemInInv(initialInv, "Dinosaur Bones")
 
-    local eggFileCreated = false
-    local dojoStartTime  = 0
     local CURRENT_STATE  = "UNKNOWN"
     local lastBlazeCount     = -1
     local lastBlazeTime      = 0
-    local hopa10Running      = false
     local heartStatDone      = false
     local stormStatDone      = false
-    local masteryFileCreated = false
     local doneCraftSaved     = false
 
     while task.wait(4) do
@@ -648,132 +615,31 @@ task.spawn(function()
             ActionStatus.Text = "Hành động: Đang farm Mastery Dragon Talon..."
         else
             local inv, invValid = GetInventoryData()
-            if not invValid then
-                if _invFailCount <= 3 then
-                    ActionStatus.Text = "Hành động: [!] Inventory lỗi, thử lại (" .. _invFailCount .. "/3)..."
-                else
-                    ActionStatus.Text = "Hành động: [!] Inventory lỗi mạng, giữ nguyên state: " .. CURRENT_STATE
-                end
-            else
+            if invValid then
                 local hasRed    = CheckItemInInv(inv, "Dojo Belt (Red)")
                 local hasBlack  = CheckItemInInv(inv, "Dojo Belt (Black)")
                 local _, boneCount = CheckItemInInv(inv, "Dinosaur Bones")
                 local _, eggCount  = CheckItemInInv(inv, "Dragon Egg")
 
-                -- SMART KICK
-                if hasRed   and not startRed   then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Red Belt."); break end
-                if hasBlack and not startBlack then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Black Belt."); break end
-                if hasRed   and boneCount >= 3 and startBones < 3 then
-                    task.wait(1); Player:Kick("\n[ Draco Hub ]\nĐủ 3 Dinosaur Bones."); break
-                end
-
-                -- ĐIỀU HƯỚNG SCRIPT (STATE MACHINE)
                 if hasBlack then
                     ClearBlackBeltFailed()
                     if IsLearnDone() then
 
                         -- ==========================================
-                        -- [ PHẦN 6 ] ĐIỀU HƯỚNG KIỂM TRA TỪ JSON (RACE -> CRAFT -> MASTERY)
+                        -- [ PHẦN 6 ] ĐIỀU HƯỚNG TỘC & CRAFT (STRICT JSON CHECK)
                         -- ==========================================
                         local doneRaceJson  = IsDoneChangeRace()
                         local doneCraftJson = IsDoneCraft()
+                        local isDracoRace   = IsDracoDetected()
                         
-                        local hasHeart      = CheckHasWeapon("Dragonheart")
-                        local hasStorm      = CheckHasWeapon("Dragonstorm")
-                        local _, scaleCount = CheckItemInInv(inv, "Dragon Scale")
-                        local _, emberCount = CheckItemInInv(inv, "Blaze Ember")
+                        -- KIỂM TRA ĐIỀU KIỆN TIÊN QUYẾT: PHẢI XONG CẢ RACE VÀ CRAFT TRONG JSON
+                        local isEverythingDone = doneRaceJson and doneCraftJson
 
-                        -- 1. NẾU CHƯA DONE RACE TRONG JSON -> ĐI ĐỔI TỘC TẠI DRAGON WIZARD
-                        if not doneRaceJson then
-                            if CURRENT_STATE ~= "CHANGE_RACE" then
-                                CURRENT_STATE = "CHANGE_RACE"
-                            end
-                            ActionStatus.Text = "Hành động: [P6] Đang bay đến Dragon Wizard đổi tộc..."
-                            
-                            -- Bay đến NPC Dragon Wizard
-                            local wizardCFrame = CFrame.new(5773.936, 1209.442, 809.224)
-                            local arrived = TweenTo(wizardCFrame)
-                            if arrived then
-                                task.wait(2)
-                                local RF = game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RF/InteractDragonQuest")
-                                if RF then
-                                    RF:InvokeServer({[1]={NPC="Dragon Wizard", Command="Speak"}})
-                                    task.wait(2)
-                                    -- Bắn lệnh học tộc ngầm (Bọc pcall để an toàn vượt qua các phiên bản)
-                                    pcall(function() RF:InvokeServer({[1]={NPC="Dragon Wizard", Command="DragonRace"}}) end)
-                                    pcall(function() RF:InvokeServer({[1]={NPC="Dragon Wizard", Command="LearnDragonRace"}}) end)
-                                    
-                                    task.wait(2)
-                                    SaveDoneChangeRace()
-                                    ActionStatus.Text = "Hành động: [P6] Đã đổi tộc xong! Lưu JSON..."
-                                end
-                            end
-
-                        -- 2. NẾU CHƯA DONE CRAFT TRONG JSON -> CHECK NGUYÊN LIỆU VÀ GỌI LỆNH CRAFT
-                        elseif not doneCraftJson then
-                            -- Nếu rương đã có sẵn cả 2 trang bị thì save JSON luôn khỏi cần craft lại
-                            if hasHeart and hasStorm then
-                                SaveDoneCraft()
-                                doneCraftSaved = true
-                                ActionStatus.Text = "Hành động: [P6] Đã có Heart & Storm! Lưu DoneCraft JSON."
-                            else
-                                -- Kiểm tra nếu thiếu nguyên liệu -> Bật auto farm nguyên liệu
-                                if scaleCount < 5 then
-                                    if CURRENT_STATE ~= "FARM_DRAGON_SCALE" then
-                                        CURRENT_STATE = "FARM_DRAGON_SCALE"
-                                        LoadBananaHub("DragonScale")
-                                    end
-                                    ActionStatus.Text = "Hành động: [P6] Farm Dragon Scale (" .. scaleCount .. "/5)..."
-                                elseif emberCount < 55 then
-                                    if CURRENT_STATE ~= "FARM_BLAZE_EMBER" then
-                                        CURRENT_STATE  = "FARM_BLAZE_EMBER"
-                                        lastBlazeCount = emberCount
-                                        lastBlazeTime  = tick()
-                                        LoadBananaHub("BlazeEmber")
-                                    end
-                                    if emberCount > lastBlazeCount then
-                                        lastBlazeCount = emberCount; lastBlazeTime = tick(); hopa10Running = false
-                                    end
-                                    if tick() - lastBlazeTime >= 60 and not hopa10Running then
-                                        hopa10Running = true
-                                        pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa10.lua"))() end)
-                                    end
-                                    ActionStatus.Text = "Hành động: [P6] Farm Blaze Ember (" .. emberCount .. "/55)"
-                                else
-                                    -- Nếu đã gom đủ nguyên liệu -> Tiến hành gọi Remote ép 2 món
-                                    if CURRENT_STATE ~= "CRAFT_WEAPONS" then
-                                        CURRENT_STATE = "CRAFT_WEAPONS"
-                                    end
-                                    ActionStatus.Text = "Hành động: [P6] Đủ nguyên liệu! Đang Craft Heart & Storm..."
-                                    
-                                    pcall(function()
-                                        local CommF = game:GetService("ReplicatedStorage").Remotes.CommF_
-                                        CommF:InvokeServer("DragonForge", "Craft", "Dragonheart")
-                                        task.wait(1.5)
-                                        CommF:InvokeServer("DragonForge", "Craft", "Dragonstorm")
-                                    end)
-                                    task.wait(3) -- Chờ server game update Inventory rồi loop kế tiếp sẽ quét được hasHeart + hasStorm
-                                end
-                            end
-
-                        -- 3. NẾU JSON CẢ 2 CÁI ĐỀU DONE -> CHECK STATS & TRANG BỊ VŨ KHÍ FARM MASTERY
-                        else
+                        if isEverythingDone then
+                            -- PHẦN CHẠY MASTERY (CHỈ KHI JSON BÁO XONG TẤT CẢ)
                             local heartMastery  = GetWeaponMastery("Dragonheart")
                             local stormMastery  = GetWeaponMastery("Dragonstorm")
 
-                            -- KICK LOGIC KHI XONG MASTERY
-                            if CURRENT_STATE == "FARM_HEART_MASTERY" and heartMastery >= 500 then
-                                task.wait(1); Player:Kick("\n[ Draco Hub ]\nDragonheart đạt 500 Mastery!"); break
-                            end
-                            if CURRENT_STATE == "FARM_STORM_MASTERY" and stormMastery >= 500 then
-                                if getgenv().change1 == true and not masteryFileCreated then
-                                    pcall(function() writefile(Player.Name .. ".txt", "Completed-mastery") end)
-                                    masteryFileCreated = true
-                                end
-                                CURRENT_STATE = "PHASE6_DONE"
-                            end
-
-                            -- FARM MASTERY LOGIC TỪNG MÓN
                             if heartMastery < 500 then
                                 if CURRENT_STATE ~= "FARM_HEART_MASTERY" then
                                     CURRENT_STATE = "FARM_HEART_MASTERY"
@@ -782,12 +648,12 @@ task.spawn(function()
                                 if not heartStatDone then
                                     EquipWeapon("Dragonheart")
                                     task.wait(1)
-                                    DoStatSword() -- Check Stats -> Reset -> Cộng Sword
+                                    DoStatSword()
                                     task.wait(1)
                                     heartStatDone = true; LoadBananaHub("HeartMastery")
                                 end
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragonheart Mastery (" .. heartMastery .. "/500)..."
-                                
+
                             elseif stormMastery < 500 then
                                 if CURRENT_STATE ~= "FARM_STORM_MASTERY" then
                                     CURRENT_STATE = "FARM_STORM_MASTERY"
@@ -796,17 +662,108 @@ task.spawn(function()
                                 if not stormStatDone then
                                     EquipWeapon("Dragonstorm")
                                     task.wait(1)
-                                    DoStatGun() -- Check Stats -> Reset -> Cộng Gun
+                                    DoStatGun()
                                     task.wait(1)
                                     stormStatDone = true; LoadBananaHub("StormMastery")
                                 end
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragonstorm Mastery (" .. stormMastery .. "/500)..."
                             else
-                                ActionStatus.Text = "Hành động: [P6] Hoàn thành tất cả 100%!"
+                                CURRENT_STATE = "PHASE6_DONE"
+                                ActionStatus.Text = "Hành động: [P6] Hoàn thành tất cả!"
+                            end
+                        else
+                            -- PHẦN FALLBACK (THAY ĐỔI TỪ SCRIPT MỚI)
+                            local _, scaleCount = CheckItemInInv(inv, "Dragon Scale")
+                            local _, emberCount = CheckItemInInv(inv, "Blaze Ember")
+                            local hasHeart      = CheckHasWeapon("Dragonheart")
+                            local hasStorm      = CheckHasWeapon("Dragonstorm")
+
+                            -- 1. ƯU TIÊN: NẾU CHƯA XONG RACE -> BAY ĐẾN DRAGON WIZARD GỌI LỆNH (LOGIC MỚI)
+                            if not doneRaceJson then
+                                if CURRENT_STATE ~= "NEW_CHANGE_RACE" then
+                                    CURRENT_STATE = "NEW_CHANGE_RACE"
+                                end
+                                ActionStatus.Text = "Hành động: [P6] Đang bay đến Dragon Wizard đổi tộc..."
+                                
+                                -- Tọa độ và lệnh từ script mới của Vũ
+                                local pos_Wizard = CFrame.new(5773.936035, 1209.442871, 809.224548)
+                                local arrived = TweenTo(pos_Wizard)
+                                
+                                if arrived then
+                                    task.wait(0.2)
+                                    pcall(function()
+                                        local Net = game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("Net")
+                                        local RF  = Net:FindFirstChild("RF/InteractDragonQuest") or Net:WaitForChild("RF/InteractDragonQuest")
+                                        local v371 = { [1] = { NPC = "Dragon Wizard", Command = "DragonRace" } }
+                                        RF:InvokeServer(unpack(v371))
+                                    end)
+                                    task.wait(1)
+                                    SaveDoneChangeRace()
+                                    ActionStatus.Text = "Hành động: [P6] Xong DragonRace! Đang Kick để nhận diện Craft..."
+                                    task.wait(2); Player:Kick("Done Race! Rejoin to proceed."); break
+                                end
+                            
+                            -- 2. TIẾP THEO: NẾU CHƯA XONG CRAFT -> BAY ĐẾN NPC CRAFT GỌI LỆNH (LOGIC MỚI)
+                            elseif not doneCraftJson then
+                                if hasHeart and hasStorm then
+                                    SaveDoneCraft()
+                                    ActionStatus.Text = "Hành động: [P6] Đã có Heart & Storm! Rejoin farm Mastery."
+                                    task.wait(2); Player:Kick("Done Craft! Rejoin."); break
+                                elseif scaleCount >= 5 and emberCount >= 55 then
+                                    -- Đã đủ nguyên liệu -> Đi Craft đồ (Sử dụng logic requestEntrance + craftByRF từ script mới)
+                                    if CURRENT_STATE ~= "NEW_CRAFTING" then
+                                        CURRENT_STATE = "NEW_CRAFTING"
+                                    end
+                                    ActionStatus.Text = "Hành động: [P6] Đang bay đến NPC Craft đồ..."
+                                    
+                                    local pos_CraftNPC = CFrame.new(5864.833008, 1209.483032, 811.329224)
+                                    local arrived = TweenTo(pos_CraftNPC)
+                                    
+                                    if arrived then
+                                        -- requestEntrance từ script mới
+                                        pcall(function()
+                                            local entrancePos = Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906)
+                                            game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", entrancePos)
+                                        end)
+                                        task.wait(0.5)
+                                        
+                                        -- Craft từng món bằng RemoteFunction của hệ thống Net
+                                        pcall(function()
+                                            local RFCraft = game:GetService("ReplicatedStorage").Modules.Net["RF/Craft"]
+                                            RFCraft:InvokeServer(unpack({ [1] = "Craft", [2] = "Dragonheart", [3] = {} }))
+                                            task.wait(3)
+                                            RFCraft:InvokeServer(unpack({ [1] = "Craft", [2] = "Dragonstorm", [3] = {} }))
+                                        end)
+                                        
+                                        task.wait(3)
+                                        SaveDoneCraft()
+                                        ActionStatus.Text = "Hành động: [P6] Hoàn thành Craft! Đang Kick sau 10s..."
+                                        task.wait(10)
+                                        Player:Kick("Completed All Tasks! Rejoin to farm Mastery.")
+                                        break
+                                    end
+                                else
+                                    -- Nếu chưa đủ nguyên liệu thì giữ logic farm cũ của Vũ
+                                    if scaleCount < 5 then
+                                        if CURRENT_STATE ~= "FARM_DRAGON_SCALE" then
+                                            CURRENT_STATE = "FARM_DRAGON_SCALE"
+                                            LoadBananaHub("DragonScale")
+                                        end
+                                        ActionStatus.Text = "Hành động: [P6] Farm Dragon Scale (" .. scaleCount .. "/5)..."
+                                    elseif emberCount < 55 then
+                                        if CURRENT_STATE ~= "FARM_BLAZE_EMBER" then
+                                            CURRENT_STATE  = "FARM_BLAZE_EMBER"
+                                            lastBlazeCount = emberCount
+                                            lastBlazeTime  = tick()
+                                            LoadBananaHub("BlazeEmber")
+                                        end
+                                        ActionStatus.Text = "Hành động: [P6] Farm Blaze Ember (" .. emberCount .. "/55)..."
+                                    end
+                                end
                             end
                         end
                     else
-                        -- Phần đi lấy Belt ở NPC (Giữ Nguyên)
+                        -- NPC Dragon Wizard Logic (Tether)...
                         if boneCount >= 3 then
                             CURRENT_STATE = "LEARN_TETHER"
                             ActionStatus.Text = "Hành động: Đủ Belt & Bone! Bay đến NPC..."
