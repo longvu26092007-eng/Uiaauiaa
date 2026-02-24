@@ -1,6 +1,6 @@
 -- ======================================================================
--- DRACO HUNTER V15.0 - SINGAPORE SNIPER (TARGET 2-3 PLAYERS)
--- Quy trình: Chạy -> Đợi 3s -> Mở UI -> Nhập Singapore -> Lọc 2-3 người -> Auto Refresh
+-- DRACO HUNTER V15.0 - SINGAPORE SNIPER (TARGET 2-4 PLAYERS)
+-- Quy trình: Chạy -> Đợi 3s -> Mở UI -> Nhập Singapore -> Lọc 2-4 người -> Auto Refresh
 -- ======================================================================
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,7 +9,7 @@ local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
 -- CẤU HÌNH CỦA VŨ
-local targetCount = 2 -- Cậu muốn 2-3 người (Ưu tiên 2)
+local targetCount = 2 -- Cậu muốn 2-4 người (Ưu tiên 2)
 local targetRegion = "Singapore"
 local isHopping = false
 
@@ -24,11 +24,11 @@ local function ClickRefresh()
         VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
         task.wait(0.05)
         VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
-        warn("🔄 [SYSTEM] Không thấy server 2-3 người, đang Refresh...")
+        warn("🔄 [SYSTEM] Không thấy server 2-4 người, đang Refresh...")
     end
 end
 
--- 2. Bộ lọc thông minh (Target 2-3 người)
+-- 2. Bộ lọc thông minh (Target 2-4 người)
 local function FilterAndJump(serverList)
     if isHopping then return end
     
@@ -44,8 +44,8 @@ local function FilterAndJump(serverList)
             pRegion = tostring(info.Region) or ""
         end
 
-        -- LỌC: Đúng Singapore và (2 hoặc 3 người)
-        if jobId ~= game.JobId and pRegion:find(targetRegion) and (pCount == 2 or pCount == 3) then
+        -- LỌC: Đúng Singapore và (2 đến 4 người)
+        if jobId ~= game.JobId and pRegion:find(targetRegion) and (pCount >= 2 and pCount <= 4) then
             bestJobId = jobId
             found = true
             break -- Ưu tiên hàng đầu, thấy là nhảy luôn
@@ -107,10 +107,13 @@ local function StartProcess()
     -- Gọi lệnh Search đầu tiên
     ReplicatedStorage.__ServerBrowser:InvokeServer(1, targetRegion)
 
-    -- 🚨 THÊM: Spam Refresh mỗi 1 giây sau khi mở UI
+    -- 🚨 THÊM: Spam Refresh mỗi 1 giây sau khi mở UI (Kết hợp Click vật lý và gọi Remote ngầm để chống lỗi Focus Tab)
     task.spawn(function()
         while not isHopping do
             ClickRefresh()
+            pcall(function()
+                ReplicatedStorage.__ServerBrowser:InvokeServer(1, targetRegion)
+            end)
             task.wait(1)
         end
     end)
