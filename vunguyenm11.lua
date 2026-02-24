@@ -424,30 +424,33 @@ local function IsDracoDetected()
     return string.find(race, "Draco") ~= nil or string.find(race, "Dragon") ~= nil
 end
 
--- === ĐỌC STAT HIỆN TẠI TỪ Player.Data ===
+-- === [CẬP NHẬT PHẦN 6] ĐỌC VÀ KIỂM TRA CHỈ SỐ STAT HIỆN TẠI ===
 local function GetStatValue(statName)
     local val = 0
     pcall(function()
-        local d = Player:FindFirstChild("Data")
-        if d and d:FindFirstChild(statName) then
-            val = d[statName].Value
+        -- Theo cấu trúc Blox Fruits: Player.Data.Stats.StatName.Level
+        local statsFolder = Player:FindFirstChild("Data") and Player.Data:FindFirstChild("Stats")
+        if statsFolder and statsFolder:FindFirstChild(statName) then
+            val = statsFolder[statName].Level.Value
         end
     end)
     return val
 end
 
--- Check stats đã đúng build Sword chưa: Melee >= 2800, Defense >= 2800, Sword >= 2800
-local function IsStatSwordBuild()
-    return GetStatValue("Melee") >= 2800
-       and GetStatValue("Defense") >= 2800
-       and GetStatValue("Sword") >= 2800
-end
-
--- Check stats đã đúng build Gun chưa: Melee >= 2800, Defense >= 2800, Gun >= 2800
-local function IsStatGunBuild()
-    return GetStatValue("Melee") >= 2800
-       and GetStatValue("Defense") >= 2800
-       and GetStatValue("Gun") >= 2800
+-- Check stats đã đúng build chưa: Ngưỡng tối thiểu 2800 (Max là 2550 nhưng script cũ để 2800)
+local function IsStatCorrect(buildType)
+    local melee = GetStatValue("Melee")
+    local defense = GetStatValue("Defense")
+    
+    if buildType == "Sword" then
+        local sword = GetStatValue("Sword")
+        -- Nếu Melee, Defense, Sword đều >= 2550 (hoặc 2800 theo logic cũ) thì coi như đã reset rồi
+        return (melee >= 2500 and defense >= 2500 and sword >= 2500)
+    elseif buildType == "Gun" then
+        local gun = GetStatValue("Gun")
+        return (melee >= 2500 and defense >= 2500 and gun >= 2500)
+    end
+    return false
 end
 
 -- === STAT RESET & ADD POINT (tham khảo StatTool) ===
@@ -465,9 +468,12 @@ local function AddStatPoint(statName, amount)
     end)
 end
 
--- FIX: Chỉ reset nếu stats chưa đúng build
+-- FIX: Chỉ reset nếu stats hiện tại không trùng với build mong muốn
 local function DoStatSword()
-    if IsStatSwordBuild() then return end
+    if IsStatCorrect("Sword") then 
+        warn("[Draco Hub] Stats hiện tại đã đúng build Sword, bỏ qua Reset.")
+        return 
+    end
     ResetStat()
     task.wait(0.5)
     AddStatPoint("Melee",   2800)
@@ -478,7 +484,10 @@ local function DoStatSword()
 end
 
 local function DoStatGun()
-    if IsStatGunBuild() then return end
+    if IsStatCorrect("Gun") then 
+        warn("[Draco Hub] Stats hiện tại đã đúng build Gun, bỏ qua Reset.")
+        return 
+    end
     ResetStat()
     task.wait(0.5)
     AddStatPoint("Melee",   2800)
@@ -489,7 +498,6 @@ local function DoStatGun()
 end
 
 -- === EQUIP WEAPON ===
--- FIX: Tên đúng trong game là "Dragonheart" và "Dragonstorm" (viết liền)
 local function CheckHasWeapon(weaponName)
     local bp  = Player:FindFirstChild("Backpack")
     local chr = Player.Character
@@ -502,7 +510,6 @@ local function EquipWeapon(weaponName)
     pcall(function()
         local chr = Player.Character
         if chr and chr:FindFirstChild(weaponName) then return end
-        -- Dùng remote LoadItem để lấy từ inventory ra backpack/character
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("LoadItem", weaponName)
     end)
 end
@@ -666,12 +673,11 @@ task.spawn(function()
                     if IsLearnDone() then
 
                         -- ==========================================
-                        -- [ PHẦN 6 ] BỎ QUA FARM NẾU CÓ DRACO/JSON
+                        -- [ PHẦN 6 ] CẬP NHẬT: DETECT STATS TRƯỚC KHI RESET
                         -- ==========================================
                         local doneRaceJson  = IsDoneChangeRace()
                         local doneCraftJson = IsDoneCraft()
                         local isDracoRace   = IsDracoDetected()
-                        -- FIX: Tên đúng là "Dragonheart" và "Dragonstorm"
                         local hasHeart      = CheckHasWeapon("Dragonheart")
                         local hasStorm      = CheckHasWeapon("Dragonstorm")
                         local hasScale, _   = CheckItemInInv(inv, "Dragon Scale")
@@ -682,7 +688,6 @@ task.spawn(function()
                             SaveDoneChangeRace()
                         end
 
-                        -- Detect craft done → ghi DoneCraft
                         if not doneCraftJson and not doneCraftSaved and hasHeart and hasStorm then
                             task.wait(2)
                             SaveDoneCraft()
@@ -693,7 +698,6 @@ task.spawn(function()
                         if enterPhase6 then
                             local _, scaleCount = CheckItemInInv(inv, "Dragon Scale")
                             local _, emberCount = CheckItemInInv(inv, "Blaze Ember")
-                            -- FIX: Tên đúng "Dragonheart" / "Dragonstorm"
                             local heartMastery  = GetWeaponMastery("Dragonheart")
                             local stormMastery  = GetWeaponMastery("Dragonstorm")
 
@@ -716,16 +720,13 @@ task.spawn(function()
                                 CURRENT_STATE = "PHASE6_DONE"
                             end
 
-                            -- ==============================
                             -- ĐIỀU HƯỚNG PHẦN 6
-                            -- ==============================
                             if not doneCraftJson and scaleCount < 5 then
                                 if CURRENT_STATE ~= "FARM_DRAGON_SCALE" then
                                     CURRENT_STATE = "FARM_DRAGON_SCALE"
                                     LoadBananaHub("DragonScale")
                                 end
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragon Scale (" .. scaleCount .. "/5)..."
-
                             elseif not doneCraftJson and emberCount < 55 then
                                 if CURRENT_STATE ~= "FARM_BLAZE_EMBER" then
                                     CURRENT_STATE  = "FARM_BLAZE_EMBER"
@@ -741,41 +742,35 @@ task.spawn(function()
                                     pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa10.lua"))() end)
                                 end
                                 ActionStatus.Text = "Hành động: [P6] Farm Blaze Ember (" .. emberCount .. "/55)"
-
                             elseif heartMastery < 500 then
                                 if CURRENT_STATE ~= "FARM_HEART_MASTERY" then
                                     CURRENT_STATE = "FARM_HEART_MASTERY"
                                     heartStatDone = false
                                 end
                                 if not heartStatDone then
-                                    -- Equip TRƯỚC bằng LoadItem remote
                                     EquipWeapon("Dragonheart")
                                     task.wait(1)
-                                    -- Check stat, chỉ reset nếu chưa đúng build Sword
+                                    -- CẬP NHẬT: Chỉ Reset nếu Stats chưa đúng build Sword
                                     DoStatSword()
                                     task.wait(1)
                                     heartStatDone = true; LoadBananaHub("HeartMastery")
                                 end
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragonheart Mastery (" .. heartMastery .. "/500)..."
-
                             elseif stormMastery < 500 then
                                 if CURRENT_STATE ~= "FARM_STORM_MASTERY" then
                                     CURRENT_STATE = "FARM_STORM_MASTERY"
                                     stormStatDone = false
                                 end
                                 if not stormStatDone then
-                                    -- Equip TRƯỚC bằng LoadItem remote
                                     EquipWeapon("Dragonstorm")
                                     task.wait(1)
-                                    -- Check stat, chỉ reset nếu chưa đúng build Gun
+                                    -- CẬP NHẬT: Chỉ Reset nếu Stats chưa đúng build Gun
                                     DoStatGun()
                                     task.wait(1)
                                     stormStatDone = true; LoadBananaHub("StormMastery")
                                 end
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragonstorm Mastery (" .. stormMastery .. "/500)..."
-
                             else
-                                CURRENT_STATE = "PHASE6_DONE"
                                 ActionStatus.Text = "Hành động: [P6] Hoàn thành tất cả!"
                             end
                         else
@@ -786,6 +781,7 @@ task.spawn(function()
                             ActionStatus.Text = "Hành động: Săn Dragon Egg (" .. eggCount .. "/4)... Chạy Golem"
                         end
                     else
+                        -- Phần NPC Dragon Wizard giữ nguyên...
                         if boneCount >= 3 then
                             CURRENT_STATE = "LEARN_TETHER"
                             ActionStatus.Text = "Hành động: Đủ Belt & Bone! Bay đến NPC..."
