@@ -383,6 +383,18 @@ local function IsDoneChangeRace()
     return data.DoneChangeRace == true
 end
 
+-- ===== MỚI: Ghi/Đọc DoneCraft vào DRCHUB JSON =====
+local function SaveDoneCraft()
+    local data = ReadJson()
+    data.DoneCraft = true
+    pcall(function() writefile(JsonFileName, HttpService:JSONEncode(data)) end)
+end
+
+local function IsDoneCraft()
+    local data = ReadJson()
+    return data.DoneCraft == true
+end
+
 -- ==========================================
 -- [ PHẦN 6 HELPERS ] RACE DETECT / STAT / EQUIP / JSON
 -- ==========================================
@@ -409,10 +421,8 @@ local function GetDragonRace()
     return raceStr
 end
 
--- KIỂM TRA CHÍNH XÁC DRACO V1/V2/V3/V4 (HỖ TRỢ PHẦN 6)
 local function IsDracoDetected()
     local race = GetDragonRace()
-    -- Trả về true nếu tên tộc chứa "Draco" hoặc "Dragon" (tùy game hiển thị)
     return string.find(race, "Draco") ~= nil or string.find(race, "Dragon") ~= nil
 end
 
@@ -593,6 +603,7 @@ task.spawn(function()
     local heartStatDone      = false
     local stormStatDone      = false
     local masteryFileCreated = false
+    local doneCraftSaved     = false  -- MỚI: flag local tránh ghi JSON nhiều lần
 
     while task.wait(4) do
         local currentMastery = GetWeaponMastery("Dragon Talon")
@@ -630,19 +641,28 @@ task.spawn(function()
                     if IsLearnDone() then
 
                         -- ==========================================
-                        -- [ PHẦN 6 ] CẢI TIẾN: BỎ QUA FARM NẾU CÓ DRACO V1/JSON
+                        -- [ PHẦN 6 ] BỎ QUA FARM NẾU CÓ DRACO/JSON
                         -- ==========================================
                         local doneRaceJson = IsDoneChangeRace()
-                        local isDracoRace  = IsDracoDetected() -- Kiểm tra trực tiếp Draco V1/V2/V3/V4
+                        local doneCraftJson = IsDoneCraft()  -- MỚI: check đã craft chưa
+                        local isDracoRace  = IsDracoDetected()
                         local hasHeart     = CheckHasWeapon("Dragon Heart")
                         local hasStorm     = CheckHasWeapon("Dragon Storm")
                         local hasScale, _  = CheckItemInInv(inv, "Dragon Scale")
 
-                        -- Nếu đã là Draco V1+ hoặc DoneChangeRace=true thì NHẢY THẲNG sang Phase 6
-                        local enterPhase6 = doneRaceJson or isDracoRace or (eggCount >= 4) or hasHeart or hasStorm or hasScale
+                        local enterPhase6 = doneRaceJson or doneCraftJson or isDracoRace or (eggCount >= 4) or hasHeart or hasStorm or hasScale
 
                         if enterPhase6 and not doneRaceJson then
                             SaveDoneChangeRace()
+                        end
+
+                        -- MỚI: Detect craft done → ghi DoneCraft = true
+                        -- Nếu có cả Dragon Heart + Dragon Storm trong backpack/character → đã craft xong
+                        if not doneCraftJson and not doneCraftSaved and hasHeart and hasStorm then
+                            task.wait(2)  -- delay 2 giây theo yêu cầu
+                            SaveDoneCraft()
+                            doneCraftSaved = true
+                            ActionStatus.Text = "Hành động: [P6] Đã ghi DoneCraft! Bỏ qua Scale/Ember lần sau."
                         end
 
                         if enterPhase6 then
@@ -670,14 +690,20 @@ task.spawn(function()
                                 CURRENT_STATE = "PHASE6_DONE"
                             end
 
+                            -- ==============================
                             -- ĐIỀU HƯỚNG PHẦN 6
-                            if scaleCount < 5 then
+                            -- MỚI: Nếu DoneCraft = true → bỏ qua Scale + Ember
+                            -- ==============================
+                            if not doneCraftJson and scaleCount < 5 then
+                                -- Chưa craft → cần farm Dragon Scale
                                 if CURRENT_STATE ~= "FARM_DRAGON_SCALE" then
                                     CURRENT_STATE = "FARM_DRAGON_SCALE"
                                     LoadBananaHub("DragonScale")
                                 end
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragon Scale (" .. scaleCount .. "/5)..."
-                            elseif emberCount < 55 then
+
+                            elseif not doneCraftJson and emberCount < 55 then
+                                -- Chưa craft → cần farm Blaze Ember
                                 if CURRENT_STATE ~= "FARM_BLAZE_EMBER" then
                                     CURRENT_STATE  = "FARM_BLAZE_EMBER"
                                     lastBlazeCount = emberCount
@@ -692,7 +718,9 @@ task.spawn(function()
                                     pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa10.lua"))() end)
                                 end
                                 ActionStatus.Text = "Hành động: [P6] Farm Blaze Ember (" .. emberCount .. "/55)"
+
                             elseif heartMastery < 500 then
+                                -- DoneCraft = true HOẶC đủ material → farm Heart mastery
                                 if CURRENT_STATE ~= "FARM_HEART_MASTERY" then
                                     CURRENT_STATE = "FARM_HEART_MASTERY"
                                     heartStatDone = false
@@ -702,6 +730,7 @@ task.spawn(function()
                                     heartStatDone = true; LoadBananaHub("HeartMastery")
                                 end
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragon Heart Mastery (" .. heartMastery .. "/500)..."
+
                             elseif stormMastery < 500 then
                                 if CURRENT_STATE ~= "FARM_STORM_MASTERY" then
                                     CURRENT_STATE = "FARM_STORM_MASTERY"
@@ -712,11 +741,12 @@ task.spawn(function()
                                     stormStatDone = true; LoadBananaHub("StormMastery")
                                 end
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragon Storm Mastery (" .. stormMastery .. "/500)..."
+
                             else
+                                CURRENT_STATE = "PHASE6_DONE"
                                 ActionStatus.Text = "Hành động: [P6] Hoàn thành tất cả!"
                             end
                         else
-                            -- Nếu chưa có Draco V1/JSON Done thì săn Golem lấy trứng
                             if CURRENT_STATE ~= "HUNT_EGG" then
                                 CURRENT_STATE = "HUNT_EGG"
                                 LoadBananaHub("Golem")
@@ -724,7 +754,6 @@ task.spawn(function()
                             ActionStatus.Text = "Hành động: Săn Dragon Egg (" .. eggCount .. "/4)... Chạy Golem"
                         end
                     else
-                        -- Logic cho NPC Dragon Wizard (Phần 5)
                         if boneCount >= 3 then
                             CURRENT_STATE = "LEARN_TETHER"
                             ActionStatus.Text = "Hành động: Đủ Belt & Bone! Bay đến NPC..."
@@ -746,7 +775,6 @@ task.spawn(function()
                         end
                     end
                 else
-                    -- Logic cày Belt (Phần 4)
                     if CURRENT_STATE ~= "FARM_DOJO_EARLY" then CURRENT_STATE = "FARM_DOJO_EARLY"; LoadBananaHub("Dojo") end
                     ActionStatus.Text = "Hành động: Đang cày Belt tại Dojo..."
                 end
