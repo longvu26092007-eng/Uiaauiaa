@@ -1,20 +1,22 @@
 -- ======================================================================
--- DRACO HUNTER V15.1 - OPTIMIZED SINGAPORE SNIPER
--- Quy trình: Chạy -> Đợi 3s -> Mở UI -> Nhập Singapore -> Lọc 2-4 người -> Auto Refresh
+-- DRACO HUNTER V16.0 - ADVANCED SINGAPORE SNIPER (FALLBACK INTEGRATED)
+-- Quy trình: Chạy -> Đợi 3s -> Mở UI -> Nhập Region -> Lọc -> Tự sửa lỗi nếu kẹt
 -- ======================================================================
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService") -- Thêm Service kiểm tra Tab
 
 local LocalPlayer = Players.LocalPlayer
 local targetCountMin = 2
 local targetCountMax = 4
 local targetRegion = "Singapore"
 local isHopping = false
+local startTime = tick() -- Bộ đếm thời gian cho Module Fallback
 
--- 1. Hàm giả lập Click nút Refresh (Đã thêm check an toàn UI)
+-- 1. Hàm giả lập Click nút Refresh (Chỉ chạy khi Tab đang mở)
 local function ClickRefresh()
     pcall(function()
         local gui = LocalPlayer.PlayerGui:FindFirstChild("ServerBrowser")
@@ -31,7 +33,7 @@ local function ClickRefresh()
             VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
             task.wait(0.05)
             VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
-            warn("🔄 [SYSTEM] Không thấy server phù hợp, đang Refresh...")
+            warn("🔄 [PHYSICAL] Đã click Refresh trên giao diện...")
         end
     end)
 end
@@ -64,7 +66,7 @@ local function FilterAndJump(serverList)
     end
 end
 
--- 3. Hook ngầm bắt gói tin (Tối ưu chống crash)
+-- 3. Hook ngầm bắt gói tin (GIỮ NGUYÊN HOÀN TOÀN CÁCH BẮT JOBID TỪ REMOTE)
 local mt = getrawmetatable(game)
 local oldNamecall = mt.__namecall
 setreadonly(mt, false)
@@ -72,13 +74,11 @@ setreadonly(mt, false)
 mt.__namecall = newcclosure(function(self, ...)
     local method = getnamecallmethod()
     
-    -- Lấy response gốc trước
     local response = oldNamecall(self, ...)
     
-    -- Chỉ xử lý nếu chưa nhảy server và đúng Remote cần tìm
+    -- Lắng nghe các server trả về từ Remote __ServerBrowser
     if not isHopping and (method == "InvokeServer" or method == "FireServer") and tostring(self.Name) == "__ServerBrowser" then
         if type(response) == "table" then
-            -- Dùng task.defer thay vì task.spawn để không làm nghẽn luồng chính của game
             task.defer(function()
                 FilterAndJump(response)
             end)
@@ -89,14 +89,13 @@ mt.__namecall = newcclosure(function(self, ...)
 end)
 setreadonly(mt, true)
 
--- 4. Quy trình khởi động tự động an toàn
+-- 4. Quy trình khởi động tự động an toàn & Module Fallback
 local function StartProcess()
     print("⏳ Đang đợi 3 giây để hệ thống ổn định...")
     task.wait(3)
     
-    warn("🛰️ BẮT ĐẦU QUY TRÌNH SNIPER...")
+    warn("🛰️ BẮT ĐẦU QUY TRÌNH SNIPER V16.0...")
     
-    -- Kiểm tra UI an toàn bằng WaitForChild thay vì gọi trực tiếp (tránh lỗi nil nếu máy yếu load chậm)
     local ui = LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("ServerBrowser", 5)
     if ui then
         ui.Enabled = true
@@ -104,7 +103,6 @@ local function StartProcess()
         if frame then 
             frame.Visible = true 
             
-            -- Nhập TextBox an toàn
             local filters = frame:FindFirstChild("Filters")
             if filters and filters:FindFirstChild("SearchRegion") and filters.SearchRegion:FindFirstChild("TextBox") then
                 filters.SearchRegion.TextBox.Text = targetRegion
@@ -115,9 +113,12 @@ local function StartProcess()
         return
     end
     
-    -- Vòng lặp quét Server (Đã xử lý chống Spam Remote)
+    startTime = tick() -- Bắt đầu tính giờ
+    
+    -- Vòng lặp quét Server
     task.spawn(function()
         while not isHopping do
+            -- Gọi Remote ngầm (Hoạt động kể cả khi ẩn tab)
             pcall(function()
                 local remote = ReplicatedStorage:FindFirstChild("__ServerBrowser")
                 if remote then
@@ -125,11 +126,37 @@ local function StartProcess()
                 end
             end)
             
-            -- Delay 3 giây đúng như yêu cầu của cậu, gom cả ClickRefresh vào đây
             task.wait(3)
             
             if not isHopping then
-                ClickRefresh()
+                local timeElapsed = tick() - startTime
+                
+                -- [MODULE FALLBACK 10 GIÂY]: Nếu kẹt quá lâu
+                if timeElapsed >= 10 then
+                    warn("⏳ [FALLBACK] Quá 10s không thấy server. Reset UI và ép quét lại Console...")
+                    pcall(function()
+                        if ui then
+                            ui.Enabled = false -- Tắt UI
+                            task.wait(0.5)
+                            ui.Enabled = true  -- Mở lại UI
+                            if ui:FindFirstChild("Frame") then ui.Frame.Visible = true end
+                            
+                            -- Ép gọi lại Remote một lần nữa ngay sau khi mở UI
+                            local remote = ReplicatedStorage:FindFirstChild("__ServerBrowser")
+                            if remote then remote:InvokeServer(1, targetRegion) end
+                        end
+                    end)
+                    startTime = tick() -- Reset lại bộ đếm 10 giây
+                
+                -- Chưa tới 10 giây, tiến hành xử lý Refresh bình thường
+                else
+                    -- [CẢI TIẾN TRẠNG THÁI TAB]: Chỉ click vật lý khi Tab Roblox đang mở
+                    if UserInputService.WindowFocused then
+                        ClickRefresh()
+                    else
+                        warn("🪟 [SYSTEM] Tab Roblox đang chạy nền, bỏ qua click vật lý để chống lỗi kẹt phím...")
+                    end
+                end
             end
         end
     end)
