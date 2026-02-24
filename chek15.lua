@@ -29,7 +29,7 @@ local Blacklist = {
 }
 
 -- 2. LINK SCRIPT SERVER HOP CỦA VŨ
-local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa6.lua"
+local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa7.lua"
 
 -- 3. GIAO DIỆN THÔNG BÁO
 if CoreGui:FindFirstChild("AntiStalkerUI") then CoreGui.AntiStalkerUI:Destroy() end
