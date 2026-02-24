@@ -464,10 +464,10 @@ task.spawn(function()
             local _, eggCount  = CheckItemInInv(inv, "Dragon Egg")
 
             -- SMART KICK (chỉ so với baseline đầu session - KHÔNG cập nhật startX)
-            if hasRed   and not startRed   then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Red Belt."); break end
-            if hasBlack and not startBlack then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Black Belt."); break end
+            if hasRed   and not startRed   then task.wait(4); Player:Kick("\n[ Draco Hub ]\nSở hữu Red Belt."); break end
+            if hasBlack and not startBlack then task.wait(4); Player:Kick("\n[ Draco Hub ]\nSở hữu Black Belt."); break end
             if hasRed   and boneCount >= 3 and startBones < 3 then
-                task.wait(1); Player:Kick("\n[ Draco Hub ]\nĐủ 3 Dinosaur Bones."); break
+                task.wait(5); Player:Kick("\n[ Draco Hub ]\nĐủ 3 Dinosaur Bones."); break
             end
             -- FIX #7: ĐÃ XÓA startRed = hasRed; startBones = boneCount; startBlack = hasBlack
 
