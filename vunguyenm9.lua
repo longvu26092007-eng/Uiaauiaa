@@ -436,18 +436,18 @@ local function GetStatValue(statName)
     return val
 end
 
--- Check stats đã đúng build Sword chưa: Melee >= 4000, Defense >= 4000, Sword >= 4000
+-- Check stats đã đúng build Sword chưa: Melee >= 2800, Defense >= 2800, Sword >= 2800
 local function IsStatSwordBuild()
-    return GetStatValue("Melee") >= 4000
-       and GetStatValue("Defense") >= 4000
-       and GetStatValue("Sword") >= 4000
+    return GetStatValue("Melee") >= 2800
+       and GetStatValue("Defense") >= 2800
+       and GetStatValue("Sword") >= 2800
 end
 
--- Check stats đã đúng build Gun chưa: Melee >= 4000, Defense >= 4000, Gun >= 4000
+-- Check stats đã đúng build Gun chưa: Melee >= 2800, Defense >= 2800, Gun >= 2800
 local function IsStatGunBuild()
-    return GetStatValue("Melee") >= 4000
-       and GetStatValue("Defense") >= 4000
-       and GetStatValue("Gun") >= 4000
+    return GetStatValue("Melee") >= 2800
+       and GetStatValue("Defense") >= 2800
+       and GetStatValue("Gun") >= 2800
 end
 
 -- === STAT RESET & ADD POINT (tham khảo StatTool) ===
@@ -467,25 +467,25 @@ end
 
 -- FIX: Chỉ reset nếu stats chưa đúng build
 local function DoStatSword()
-    if IsStatSwordBuild() then return end -- đã đúng build Sword, bỏ qua
+    if IsStatSwordBuild() then return end
     ResetStat()
     task.wait(0.5)
-    AddStatPoint("Melee",   4000)
+    AddStatPoint("Melee",   2800)
     task.wait(0.3)
-    AddStatPoint("Defense", 4000)
+    AddStatPoint("Defense", 2800)
     task.wait(0.3)
-    AddStatPoint("Sword",   4000)
+    AddStatPoint("Sword",   2800)
 end
 
 local function DoStatGun()
-    if IsStatGunBuild() then return end -- đã đúng build Gun, bỏ qua
+    if IsStatGunBuild() then return end
     ResetStat()
     task.wait(0.5)
-    AddStatPoint("Melee",   4000)
+    AddStatPoint("Melee",   2800)
     task.wait(0.3)
-    AddStatPoint("Defense", 4000)
+    AddStatPoint("Defense", 2800)
     task.wait(0.3)
-    AddStatPoint("Gun",     4000)
+    AddStatPoint("Gun",     2800)
 end
 
 -- === EQUIP WEAPON ===
@@ -500,13 +500,10 @@ end
 
 local function EquipWeapon(weaponName)
     pcall(function()
-        local bp   = Player:FindFirstChild("Backpack")
-        local chr  = Player.Character
-        local hum  = chr and chr:FindFirstChild("Humanoid")
+        local chr = Player.Character
         if chr and chr:FindFirstChild(weaponName) then return end
-        if bp and bp:FindFirstChild(weaponName) and hum then
-            hum:EquipTool(bp[weaponName])
-        end
+        -- Dùng remote LoadItem để lấy từ inventory ra backpack/character
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("LoadItem", weaponName)
     end)
 end
 
@@ -751,9 +748,11 @@ task.spawn(function()
                                     heartStatDone = false
                                 end
                                 if not heartStatDone then
-                                    -- FIX: Equip "Dragonheart" + check stat trước khi reset
-                                    EquipWeapon("Dragonheart"); task.wait(1)
-                                    DoStatSword() -- bên trong tự check IsStatSwordBuild(), nếu đúng thì bỏ qua
+                                    -- Equip TRƯỚC bằng LoadItem remote
+                                    EquipWeapon("Dragonheart")
+                                    task.wait(1)
+                                    -- Check stat, chỉ reset nếu chưa đúng build Sword
+                                    DoStatSword()
                                     task.wait(1)
                                     heartStatDone = true; LoadBananaHub("HeartMastery")
                                 end
@@ -765,9 +764,11 @@ task.spawn(function()
                                     stormStatDone = false
                                 end
                                 if not stormStatDone then
-                                    -- FIX: Equip "Dragonstorm" + check stat trước khi reset
-                                    EquipWeapon("Dragonstorm"); task.wait(1)
-                                    DoStatGun() -- bên trong tự check IsStatGunBuild(), nếu đúng thì bỏ qua
+                                    -- Equip TRƯỚC bằng LoadItem remote
+                                    EquipWeapon("Dragonstorm")
+                                    task.wait(1)
+                                    -- Check stat, chỉ reset nếu chưa đúng build Gun
+                                    DoStatGun()
                                     task.wait(1)
                                     stormStatDone = true; LoadBananaHub("StormMastery")
                                 end
