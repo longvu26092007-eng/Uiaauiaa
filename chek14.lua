@@ -29,7 +29,7 @@ local Blacklist = {
 }
 
 -- 2. LINK SCRIPT SERVER HOP CỦA VŨ
-local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa5.lua"
+local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa6.lua"
 
 -- 3. GIAO DIỆN THÔNG BÁO
 if CoreGui:FindFirstChild("AntiStalkerUI") then CoreGui.AntiStalkerUI:Destroy() end
@@ -82,7 +82,7 @@ end
 
 -- 7. LUỒNG TỰ ĐỘNG QUÉT CHÍNH
 task.spawn(function()
-    task.wait(19) -- Đợi server load
+    task.wait(5) -- Đợi server load
     
     for i = 1, 3 do
         Status.Text = "🔍 Quét Lần " .. i .. "/3..."
