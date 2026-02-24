@@ -576,14 +576,14 @@ local function LoadBananaHub(typeStr)
             hubKey = "1f34f32b6f1917a66d57e8c6"
             getgenv().Config = {
                 ["Select Weapon"]      = "Sword",
-                ["Select Method Farm"] = "Farm Bones",
+                ["Select Method Farm"] = "Farm Katakuri",
                 ["Start Farm"]         = true,
             }
         elseif typeStr == "StormMastery" then
             hubKey = "1f34f32b6f1917a66d57e8c6"
             getgenv().Config = {
                 ["Select Weapon"]              = "Melee",
-                ["Select Method Farm"]         = "Farm Bones",
+                ["Select Method Farm"]         = "Farm katakuri",
                 ["Select Method Farm Mastery"] = "Gun",
                 ["Health %"]                   = "25",
                 ["Farm Mastery"]               = true,
