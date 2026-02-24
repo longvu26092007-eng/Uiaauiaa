@@ -1,6 +1,7 @@
 -- ======================================================================
 -- DRACO HUNTER V15.0 - SINGAPORE SNIPER (TARGET 2-3 PLAYERS)
--- Quy trình: Chạy -> Đợi 3s -> Mở UI -> Nhập Singapore -> Lọc 2-3 người -> Auto Refresh
+-- Quy trình: Chạy -> Đợi 9s -> Mở UI -> Nhập Singapore -> Lọc 2-3 người -> Refresh mỗi 1s
+-- Failsafe: Bấm refresh liên tục nếu mở UI được 5s mà chưa hop thành công
 -- ======================================================================
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,9 +13,13 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local targetCount = 2 -- Cậu muốn 2-3 người (Ưu tiên 2)
 local targetRegion = "Singapore"
 local isHopping = false
+local isClicking = false -- Tránh việc 2 luồng click đè lên nhau cùng lúc
 
 -- 1. Hàm giả lập Click nút Refresh (Đã fix tọa độ cho Vũ)
 local function ClickRefresh()
+    if isClicking or isHopping then return end
+    isClicking = true
+    
     local frame = Players.LocalPlayer.PlayerGui.ServerBrowser.Frame
     local refreshBtn = frame:FindFirstChild("Refresh")
     if refreshBtn and refreshBtn.Visible then
@@ -24,8 +29,10 @@ local function ClickRefresh()
         VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
         task.wait(0.05)
         VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
-        warn("🔄 [SYSTEM] Không thấy server 2-3 người, đang Refresh...")
+        warn("🔄 [SYSTEM] Đang Refresh tìm server 2-3 người...")
     end
+    
+    isClicking = false
 end
 
 -- 2. Bộ lọc thông minh (Target 2-3 người)
@@ -59,8 +66,8 @@ local function FilterAndJump(serverList)
             TeleportService:TeleportToPlaceInstance(game.PlaceId, bestJobId, Players.LocalPlayer)
         end)
     else
-        -- Delay 3 giây trước khi Refresh như cậu yêu cầu
-        task.wait(3)
+        -- Delay 1 giây trước khi Refresh
+        task.wait(1)
         ClickRefresh()
     end
 end
@@ -88,8 +95,8 @@ setreadonly(mt, true)
 
 -- 4. Quy trình khởi động tự động
 local function StartProcess()
-    print("⏳ Đang đợi 3 giây để hệ thống ổn định...")
-    task.wait(3)
+    print("⏳ Đang đợi 9 giây để hệ thống ổn định...")
+    task.wait(9)
     
     warn("🛰️ BẮT ĐẦU QUY TRÌNH SNIPER...")
     
@@ -106,6 +113,18 @@ local function StartProcess()
     
     -- Gọi lệnh Search đầu tiên
     ReplicatedStorage.__ServerBrowser:InvokeServer(1, targetRegion)
+
+    -- LUỒNG BẢO HIỂM (FAILSAFE): Nếu sau 5s mở UI mà vẫn chưa hop, tự động click refresh mỗi 1s
+    task.spawn(function()
+        task.wait(5)
+        if not isHopping then
+            warn("⚠️ Quá 5 giây chưa tìm thấy server hoặc bị kẹt! Bật chế độ spam Refresh mỗi 1s...")
+            while not isHopping do
+                ClickRefresh()
+                task.wait(1)
+            end
+        end
+    end)
 end
 
 -- THỰC THI
