@@ -434,6 +434,64 @@ local function SaveBlazeEmberCount(count)
     end)
 end
 
+-- ==========================================
+-- [ PHẦN 6 HELPER ] CRAFT DRAGONHEART & DRAGONSTORM
+-- ==========================================
+local function DoPhase6Craft()
+    local RS       = game:GetService("ReplicatedStorage")
+    local RFCraft  = RS:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RF/Craft")
+
+    local function craftByRF(itemName)
+        pcall(function()
+            RFCraft:InvokeServer(unpack({ [1] = "Craft", [2] = itemName, [3] = {} }))
+        end)
+    end
+
+    -- Step 1: requestEntrance
+    ActionStatus.Text = "Hành động: [P6] requestEntrance vào khu vực..."
+    pcall(function()
+        RS.Remotes.CommF_:InvokeServer("requestEntrance", Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906))
+    end)
+    task.wait(0.5)
+
+    -- Step 2: Bay đến Dragon Wizard → DragonRace
+    ActionStatus.Text = "Hành động: [P6] Bay đến Dragon Wizard..."
+    TweenTo(CFrame.new(5773.936035, 1209.442871, 809.224548))
+    task.wait(0.3)
+
+    ActionStatus.Text = "Hành động: [P6] Gọi DragonRace..."
+    pcall(function()
+        local Net = RS:WaitForChild("Modules"):WaitForChild("Net")
+        local RF  = Net:FindFirstChild("RF/InteractDragonQuest") or Net["RF/InteractDragonQuest"]
+        if RF then
+            RF:InvokeServer(unpack({ [1] = { NPC = "Dragon Wizard", Command = "DragonRace" } }))
+        end
+    end)
+
+    -- Step 3: Chờ 10 giây
+    for i = 10, 1, -1 do
+        ActionStatus.Text = "Hành động: [P6] Chờ " .. i .. "s trước khi craft..."
+        task.wait(1)
+    end
+
+    -- Step 4: Bay đến NPC Craft
+    ActionStatus.Text = "Hành động: [P6] Bay đến NPC Craft..."
+    TweenTo(CFrame.new(5864.833008, 1209.483032, 811.329224))
+    task.wait(0.3)
+
+    -- Step 5: Craft Dragonheart
+    ActionStatus.Text = "Hành động: [P6] Craft Dragonheart..."
+    craftByRF("Dragonheart")
+    task.wait(3)
+
+    -- Step 6: Craft Dragonstorm
+    ActionStatus.Text = "Hành động: [P6] Craft Dragonstorm..."
+    craftByRF("Dragonstorm")
+    task.wait(1)
+
+    ActionStatus.Text = "Hành động: [P6] ✅ Hoàn thành toàn bộ! Done!"
+end
+
 -- FIX #6: LoadBananaHub - thêm bảo vệ chống 2 hub chạy song song
 -- Lý do: Gọi "Dojo" rồi 4s sau gọi "Golem" → cả hai cùng chạy, xung đột _G
 _G.HubLoadedType   = _G.HubLoadedType or "None"
@@ -514,9 +572,10 @@ task.spawn(function()
     local dojoStartTime  = 0
 
     -- [ PHẦN 6 ] Biến theo dõi Blaze Ember stall detection
-    local lastBlazeCount = -1   -- số Blaze Ember lần check trước
-    local lastBlazeTime  = 0    -- tick() lần cuối Blaze Ember tăng
-    local hopa10Running  = false -- flag tránh chạy hopa10 nhiều lần
+    local lastBlazeCount  = -1
+    local lastBlazeTime   = 0
+    local hopa10Running   = false
+    local phase6CraftDone = false  -- flag tránh chạy DoPhase6Craft nhiều lần
 
     -- FIX #8: STATE machine đơn giản - ngăn execute sai nhánh khi inv fail
     local CURRENT_STATE = "UNKNOWN"
@@ -590,7 +649,6 @@ task.spawn(function()
 
                         -- KICK khi vừa đủ Blaze Ember (đang farm mà đạt 55)
                         if CURRENT_STATE == "FARM_BLAZE_EMBER" and emberCount >= 55 then
-                            -- Ghi lần cuối trước khi kick
                             SaveBlazeEmberCount(emberCount)
                             task.wait(1)
                             Player:Kick("\n[ Draco Hub ]\nĐã đủ 55/55 Blaze Ember!\nKick để nhận diện bước tiếp theo.")
@@ -616,17 +674,14 @@ task.spawn(function()
                                 LoadBananaHub("BlazeEmber")
                             end
 
-                            -- Ghi số lượng Blaze Ember vào NameAccount.json
                             SaveBlazeEmberCount(emberCount)
 
-                            -- Stall detection: nếu Blaze Ember tăng → reset timer
                             if emberCount > lastBlazeCount then
                                 lastBlazeCount = emberCount
                                 lastBlazeTime  = tick()
-                                hopa10Running  = false -- reset flag vì đã có tiến triển
+                                hopa10Running  = false
                             end
 
-                            -- Nếu 1 phút không tăng → chạy hopa10
                             if tick() - lastBlazeTime >= 60 and not hopa10Running then
                                 hopa10Running = true
                                 ActionStatus.Text = "Hành động: [P6] Blaze Ember kẹt 1 phút! Chạy hopa10..."
@@ -635,7 +690,6 @@ task.spawn(function()
                                         loadstring(game:HttpGet("https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa10.lua"))()
                                     end)
                                 end)
-                                -- Reset timer sau khi chạy hopa10, cho 1 phút nữa trước khi chạy lại
                                 lastBlazeTime = tick()
                             end
 
@@ -644,8 +698,17 @@ task.spawn(function()
 
                         else
                             -- ===== ĐÃ ĐỦ CẢ HAI: Dragon Scale >= 5 & Blaze Ember >= 55 =====
-                            CURRENT_STATE = "PHASE6_DONE"
-                            ActionStatus.Text = "Hành động: [P6] Đã đủ Dragon Scale & Blaze Ember! Chờ cập nhật Phase tiếp..."
+                            -- THÊM MỚI: Chạy flow craft (chỉ 1 lần, không lặp lại)
+                            if not phase6CraftDone then
+                                phase6CraftDone = true
+                                CURRENT_STATE   = "PHASE6_CRAFT"
+                                task.spawn(function()
+                                    DoPhase6Craft()
+                                end)
+                            else
+                                CURRENT_STATE = "PHASE6_DONE"
+                                ActionStatus.Text = "Hành động: [P6] ✅ Hoàn thành toàn bộ! Done!"
+                            end
                         end
 
                     else
@@ -671,8 +734,6 @@ task.spawn(function()
                             -- FIX #1-NEW: Không dùng continue, để rơi xuống end
                         else
                             -- FIX #6-NEW: Gộp delay + check alive trước Speak & LearnTether
-                            -- Cũ: task.wait(3) → Speak → task.wait(3) → Learn (6s gap không check)
-                            -- Mới: task.wait(5) → check alive → Speak+Learn liên tiếp
                             ActionStatus.Text = "Hành động: Đã tới NPC. Delay 5s trước khi tương tác..."
                             task.wait(5)
 
