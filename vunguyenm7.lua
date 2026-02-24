@@ -371,6 +371,18 @@ local function ClearBlackBeltFailed()
     end
 end
 
+-- ===== MỚI: Ghi/Đọc DoneChangeRace vào DRCHUB JSON =====
+local function SaveDoneChangeRace()
+    local data = ReadJson()
+    data.DoneChangeRace = true
+    pcall(function() writefile(JsonFileName, HttpService:JSONEncode(data)) end)
+end
+
+local function IsDoneChangeRace()
+    local data = ReadJson()
+    return data.DoneChangeRace == true
+end
+
 -- ==========================================
 -- [ PHẦN 6 HELPERS ] RACE DETECT / STAT / EQUIP / JSON
 -- ==========================================
@@ -453,10 +465,8 @@ local function EquipWeapon(weaponName)
         local chr  = Player.Character
         local hum  = chr and chr:FindFirstChild("Humanoid")
 
-        -- Đã cầm trên tay rồi
         if chr and chr:FindFirstChild(weaponName) then return end
 
-        -- Có trong Backpack → equip
         if bp and bp:FindFirstChild(weaponName) and hum then
             hum:EquipTool(bp[weaponName])
         end
@@ -492,7 +502,6 @@ local function LoadBananaHub(typeStr)
     _G.HubIsLoading  = true
 
     task.spawn(function()
-        -- Key mặc định
         local hubKey = "51e126ee832d3c4fff7b6178"
 
         getgenv().NewUI = true
@@ -521,8 +530,6 @@ local function LoadBananaHub(typeStr)
             }
         elseif typeStr == "Bone" then
             getgenv().Config = {["Select Method Farm"] = "Farm Bones", ["Start Farm"] = true}
-
-        -- ===== PHẦN 6: CÁC CONFIG MỚI =====
         elseif typeStr == "DragonScale" then
             getgenv().Config = {
                 ["Select Material"] = "Dragon Scale",
@@ -534,7 +541,6 @@ local function LoadBananaHub(typeStr)
                 ["Auto Quest Dragon Hunter"] = true,
             }
         elseif typeStr == "HeartMastery" then
-            -- Key khác cho farm mastery weapon
             hubKey = "1f34f32b6f1917a66d57e8c6"
             getgenv().Config = {
                 ["Select Weapon"]      = "Sword",
@@ -542,7 +548,6 @@ local function LoadBananaHub(typeStr)
                 ["Start Farm"]         = true,
             }
         elseif typeStr == "StormMastery" then
-            -- Key khác cho farm mastery weapon
             hubKey = "1f34f32b6f1917a66d57e8c6"
             getgenv().Config = {
                 ["Select Weapon"]              = "Melee",
@@ -565,7 +570,6 @@ local function LoadBananaHub(typeStr)
     end)
 end
 
--- FIX: ManualDojoBtn click handler — đặt SAU LoadBananaHub
 ManualDojoBtn.MouseButton1Click:Connect(function()
     _G.HubLoadedType = "None"
     LoadBananaHub("Dojo")
@@ -588,13 +592,12 @@ task.spawn(function()
     local dojoStartTime  = 0
     local CURRENT_STATE  = "UNKNOWN"
 
-    -- [ PHẦN 6 ] Biến theo dõi
-    local lastBlazeCount    = -1
-    local lastBlazeTime     = 0
-    local hopa10Running     = false
-    local heartStatDone     = false  -- flag đã reset stat cho Heart
-    local stormStatDone     = false  -- flag đã reset stat cho Storm
-    local masteryFileCreated = false -- flag đã tạo file Completed-mastery
+    local lastBlazeCount     = -1
+    local lastBlazeTime      = 0
+    local hopa10Running      = false
+    local heartStatDone      = false
+    local stormStatDone      = false
+    local masteryFileCreated = false
 
     while task.wait(4) do
         local currentMastery = GetWeaponMastery("Dragon Talon")
@@ -638,15 +641,24 @@ task.spawn(function()
                     if IsLearnDone() then
 
                         -- ==========================================
-                        -- [ PHẦN 6 ] DETECT DRAGON RACE → BỎ QUA EGG
-                        -- Nếu đã chuyển Dragon Race (V1-V4) thì bỏ qua farm egg
-                        -- vì sau khi chuyển race, BananaHub Golem sẽ farm egg riêng
+                        -- [ PHẦN 6 ] DETECT → BỎ QUA EGG NẾU ĐÃ DONE
+                        -- Ưu tiên: JSON flag > Dragon Race detect > Weapon detect > Egg count
                         -- ==========================================
-                        local isDragon = IsDragonRace()
-                        local enterPhase6 = (eggCount >= 4) or isDragon
+                        local doneRaceJson = IsDoneChangeRace()
+                        local isDragon     = IsDragonRace()
+                        local hasHeart     = CheckHasWeapon("Dragon Heart")
+                        local hasStorm     = CheckHasWeapon("Dragon Storm")
+                        local hasScale, _  = CheckItemInInv(inv, "Dragon Scale")
+
+                        local enterPhase6 = (eggCount >= 4) or doneRaceJson or isDragon or hasHeart or hasStorm or hasScale
+
+                        -- Ghi flag DoneChangeRace nếu chưa có trong JSON
+                        if enterPhase6 and not doneRaceJson then
+                            SaveDoneChangeRace()
+                        end
 
                         if enterPhase6 then
-                            -- Ghi file egg nếu được phép (giữ nguyên logic cũ)
+                            -- Ghi file egg nếu được phép
                             if eggCount >= 4 and getgenv().change == true then
                                 if not eggFileCreated then
                                     pcall(function() writefile(Player.Name .. ".txt", "Completed-Draegg") end)
@@ -656,21 +668,20 @@ task.spawn(function()
 
                             -- ==========================================
                             -- [ PHẦN 6 : GET SWORD AND GUN ]
-                            -- Flow: Dragon Scale → Blaze Ember → Heart Mastery → Storm Mastery
                             -- ==========================================
                             local _, scaleCount = CheckItemInInv(inv, "Dragon Scale")
                             local _, emberCount = CheckItemInInv(inv, "Blaze Ember")
                             local heartMastery  = GetWeaponMastery("Dragon Heart")
                             local stormMastery  = GetWeaponMastery("Dragon Storm")
 
-                            -- === KICK khi vừa đủ Dragon Scale (đang farm mà đạt 5) ===
+                            -- KICK khi vừa đủ Dragon Scale
                             if CURRENT_STATE == "FARM_DRAGON_SCALE" and scaleCount >= 5 then
                                 task.wait(1)
                                 Player:Kick("\n[ Draco Hub ]\nĐã đủ 5/5 Dragon Scale!\nKick để nhận diện bước tiếp theo.")
                                 break
                             end
 
-                            -- === KICK khi vừa đủ Blaze Ember (đang farm mà đạt 55) ===
+                            -- KICK khi vừa đủ Blaze Ember
                             if CURRENT_STATE == "FARM_BLAZE_EMBER" and emberCount >= 55 then
                                 SaveBlazeEmberCount(emberCount)
                                 task.wait(1)
@@ -678,14 +689,14 @@ task.spawn(function()
                                 break
                             end
 
-                            -- === KICK khi Dragon Heart vừa đủ 500 mastery ===
+                            -- KICK khi Dragon Heart đủ 500
                             if CURRENT_STATE == "FARM_HEART_MASTERY" and heartMastery >= 500 then
                                 task.wait(1)
                                 Player:Kick("\n[ Draco Hub ]\nDragon Heart đạt 500 Mastery!\nKick để nhận diện bước tiếp theo.")
                                 break
                             end
 
-                            -- === Dragon Storm vừa đủ 500 → tạo file ===
+                            -- Dragon Storm đủ 500 → tạo file
                             if CURRENT_STATE == "FARM_STORM_MASTERY" and stormMastery >= 500 then
                                 if getgenv().change1 == true then
                                     if not masteryFileCreated then
@@ -700,11 +711,9 @@ task.spawn(function()
                             end
 
                             -- ==============================
-                            -- ĐIỀU HƯỚNG PHẦN 6 (STATE MACHINE)
+                            -- ĐIỀU HƯỚNG PHẦN 6
                             -- ==============================
-
                             if scaleCount < 5 then
-                                -- ===== BƯỚC 1: Farm Dragon Scale =====
                                 if CURRENT_STATE ~= "FARM_DRAGON_SCALE" then
                                     CURRENT_STATE = "FARM_DRAGON_SCALE"
                                     LoadBananaHub("DragonScale")
@@ -712,7 +721,6 @@ task.spawn(function()
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragon Scale (" .. scaleCount .. "/5)..."
 
                             elseif emberCount < 55 then
-                                -- ===== BƯỚC 2: Farm Blaze Ember =====
                                 if CURRENT_STATE ~= "FARM_BLAZE_EMBER" then
                                     CURRENT_STATE  = "FARM_BLAZE_EMBER"
                                     lastBlazeCount = emberCount
@@ -721,17 +729,14 @@ task.spawn(function()
                                     LoadBananaHub("BlazeEmber")
                                 end
 
-                                -- Ghi số lượng Blaze Ember vào PlayerName.json
                                 SaveBlazeEmberCount(emberCount)
 
-                                -- Stall detection: nếu Blaze Ember tăng → reset timer
                                 if emberCount > lastBlazeCount then
                                     lastBlazeCount = emberCount
                                     lastBlazeTime  = tick()
                                     hopa10Running  = false
                                 end
 
-                                -- Nếu 1 phút không tăng → chạy hopa10
                                 if tick() - lastBlazeTime >= 60 and not hopa10Running then
                                     hopa10Running = true
                                     ActionStatus.Text = "Hành động: [P6] Blaze Ember kẹt 1 phút! Chạy hopa10..."
@@ -747,13 +752,11 @@ task.spawn(function()
                                 ActionStatus.Text = "Hành động: [P6] Farm Blaze Ember (" .. emberCount .. "/55) | Stall: " .. stallSec .. "s"
 
                             elseif heartMastery < 500 then
-                                -- ===== BƯỚC 3: Farm Dragon Heart Mastery =====
                                 if CURRENT_STATE ~= "FARM_HEART_MASTERY" then
                                     CURRENT_STATE = "FARM_HEART_MASTERY"
                                     heartStatDone = false
                                 end
 
-                                -- Equip Dragon Heart + Reset Stat (chỉ 1 lần khi vào state)
                                 if not heartStatDone then
                                     ActionStatus.Text = "Hành động: [P6] Tìm & trang bị Dragon Heart, reset stat Sword..."
                                     EquipWeapon("Dragon Heart")
@@ -767,13 +770,11 @@ task.spawn(function()
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragon Heart Mastery (" .. heartMastery .. "/500)..."
 
                             elseif stormMastery < 500 then
-                                -- ===== BƯỚC 4: Farm Dragon Storm Mastery =====
                                 if CURRENT_STATE ~= "FARM_STORM_MASTERY" then
                                     CURRENT_STATE = "FARM_STORM_MASTERY"
                                     stormStatDone = false
                                 end
 
-                                -- Equip Dragon Storm + Reset Stat (chỉ 1 lần khi vào state)
                                 if not stormStatDone then
                                     ActionStatus.Text = "Hành động: [P6] Tìm & trang bị Dragon Storm, reset stat Gun..."
                                     EquipWeapon("Dragon Storm")
@@ -787,7 +788,6 @@ task.spawn(function()
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragon Storm Mastery (" .. stormMastery .. "/500)..."
 
                             else
-                                -- ===== ĐÃ HOÀN THÀNH TOÀN BỘ PHẦN 6 =====
                                 CURRENT_STATE = "PHASE6_DONE"
                                 ActionStatus.Text = "Hành động: [P6] Hoàn thành! Heart & Storm đều 500+. Chờ Phase tiếp..."
                             end
@@ -801,7 +801,6 @@ task.spawn(function()
                             ActionStatus.Text = "Hành động: Săn Dragon Egg (" .. eggCount .. "/4)... Chạy Golem"
                         end
                     else
-                        -- Chưa học tether
                         if boneCount >= 3 then
                             CURRENT_STATE = "LEARN_TETHER"
                             ActionStatus.Text = "Hành động: Đủ Black Belt & Bones! Delay 3s Tween..."
