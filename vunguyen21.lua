@@ -29,6 +29,37 @@ repeat task.wait() until game.Players.LocalPlayer.Character and game.Players.Loc
 task.wait(2)
 
 -- ==========================================
+-- [ PHẦN 0.1 : MODULE DETECT SCRIPT KẸT (15 GIÂY) ]
+-- ==========================================
+task.spawn(function()
+    local LogService = game:GetService("LogService")
+    local successLoaded = false
+
+    -- Đọc dữ liệu Console (F9)
+    local logConnection
+    logConnection = LogService.MessageOut:Connect(function(message)
+        local msg = string.lower(message)
+        -- Phát hiện dòng chữ báo hiệu execute thành công
+        if string.find(msg, "%[wl bye van do%]") then
+            successLoaded = true
+            if logConnection then logConnection:Disconnect() end
+        end
+    end)
+
+    -- Chờ đến khi lệnh gọi Banana Hub được kích hoạt mới bắt đầu đếm giờ
+    while task.wait(1) do
+        if _G.HubLoadedType and _G.HubLoadedType ~= "None" then
+            -- Khi bắt đầu gọi script, đếm đúng 15 giây
+            task.wait(15)
+            if not successLoaded then
+                game.Players.LocalPlayer:Kick("\n[ Draco Hub ]\nLỗi: Không nhận được phản hồi Execute từ Banana Hub sau 15 giây.\nScript bị kẹt, đang tiến hành Kick để Rejoin!")
+            end
+            break -- Dừng luồng theo dõi sau khi check xong
+        end
+    end
+end)
+
+-- ==========================================
 -- [ PHẦN 1 : DRGTL ] LÕI LOGIC (CORE)
 -- ==========================================
 local Player = game.Players.LocalPlayer
