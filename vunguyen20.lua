@@ -211,7 +211,7 @@ MasteryLabel.TextSize = 13
 MasteryLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- ==========================================
--- [ PHẦN 4 & 5 ] MAIN LOGIC & DETECT DOJO BELT (Y NGUYÊN BẢN 2)
+-- [ PHẦN 4 & 5 ] MAIN LOGIC & DETECT DOJO BELT (ĐÃ THÊM FAILSAFE 3 PHÚT)
 -- ==========================================
 
 TPTradeBtn.MouseButton1Click:Connect(function()
@@ -279,22 +279,48 @@ local function CheckItemInInv(invData, itemName)
 end
 
 -- ==========================================
--- BỘ XỬ LÝ FILE JSON (DRAGON WIZARD)
+-- BỘ XỬ LÝ FILE JSON (DRAGON WIZARD & FAILSAFE BLACK BELT)
 -- ==========================================
 local HttpService = game:GetService("HttpService")
 local JsonFileName = "DRCHUB_" .. Player.Name .. ".json"
 
+local function ReadJson()
+    if isfile and isfile(JsonFileName) then
+        local ok, data = pcall(function() return HttpService:JSONDecode(readfile(JsonFileName)) end)
+        if ok and type(data) == "table" then return data end
+    end
+    return {}
+end
+
 local function SaveLearnStatus()
-    local data = {Status = "StatusLearnDone"}
+    local data = ReadJson()
+    data.Status = "StatusLearnDone"
     pcall(function() writefile(JsonFileName, HttpService:JSONEncode(data)) end)
 end
 
 local function IsLearnDone()
-    if isfile and isfile(JsonFileName) then
-        local ok, data = pcall(function() return HttpService:JSONDecode(readfile(JsonFileName)) end)
-        return ok and data and data.Status == "StatusLearnDone"
+    local data = ReadJson()
+    return data.Status == "StatusLearnDone"
+end
+
+-- Lưu trạng thái 3 phút tạch Black Belt
+local function SaveBlackBeltFailed(bCount)
+    local data = ReadJson()
+    data.NotDoneBlack = bCount
+    pcall(function() writefile(JsonFileName, HttpService:JSONEncode(data)) end)
+end
+
+local function GetBlackBeltFailed()
+    local data = ReadJson()
+    return data.NotDoneBlack
+end
+
+local function ClearBlackBeltFailed()
+    local data = ReadJson()
+    if data.NotDoneBlack then
+        data.NotDoneBlack = nil
+        pcall(function() writefile(JsonFileName, HttpService:JSONEncode(data)) end)
     end
-    return false
 end
 
 -- TRÌNH QUẢN LÝ LOAD SCRIPT BANANA HUB
@@ -308,14 +334,12 @@ local function LoadBananaHub(typeStr)
         getgenv().NewUI = true
         
         if typeStr == "Dojo" then
-            ActionStatus.Text = "Hành động: Đang tải Banana Hub (Dojo)..."
             getgenv().Config = {
                 ["Select Method Farm"] = "Farm Bones", ["Start Farm"] = false, ["Auto Quest Dojo Trainer"] = true,
                 ["Select Zone"] = "Zone 6", ["Select Boat"] = "Brigade",
                 ["Select Sea Events"] = {["Shark"] = true, ["Terrorshark"] = true, ["Piranha"] = true, ["Ship"] = true}
             }
         elseif typeStr == "Golem" then
-            ActionStatus.Text = "Hành động: Đang tải Banana Hub (Golem)..."
             getgenv().Config = {
                 ["Select Weapon Kill Golem"] = "Melee", ["Select Method Kill Golem"] = "Click M1",
                 ["Auto Collect Bone"] = true, ["Auto Collect Egg"] = true, ["Ignore Craft Volcanic Magnet"] = true,
@@ -323,7 +347,6 @@ local function LoadBananaHub(typeStr)
                 ["Select Weapons Fix Lava"] = {["Melee"] = true, ["Sword"] = true}
             }
         elseif typeStr == "Bone" then
-            ActionStatus.Text = "Hành động: Đang khởi tạo Banana Hub (Farm Bone)..."
             getgenv().Config = {["Select Method Farm"] = "Farm Bones", ["Start Farm"] = true}
         end
         
@@ -332,7 +355,7 @@ local function LoadBananaHub(typeStr)
     end)
 end
 
--- LUỒNG KIỂM SOÁT TỐI THƯỢNG (TÍCH HỢP DRAGON WIZARD LOGIC TỪ BẢN 2)
+-- LUỒNG KIỂM SOÁT TỐI THƯỢNG
 task.spawn(function()
     repeat task.wait(1) until CheckDragonTalon()
     
@@ -340,7 +363,9 @@ task.spawn(function()
     local startRed, _ = CheckItemInInv(initialInv, "Dojo Belt (Red)")
     local startBlack, _ = CheckItemInInv(initialInv, "Dojo Belt (Black)")
     local _, startBones = CheckItemInInv(initialInv, "Dinosaur Bones")
-    local eggFileCreated = false -- Biến cờ để chỉ tạo file txt 1 lần duy nhất
+    
+    local eggFileCreated = false 
+    local dojoStartTime = 0 -- Bộ đếm 3 phút Dojo
     
     while task.wait(4) do
         local currentMastery = GetWeaponMastery("Dragon Talon")
@@ -356,7 +381,7 @@ task.spawn(function()
             local hasRed = CheckItemInInv(inv, "Dojo Belt (Red)")
             local hasBlack = CheckItemInInv(inv, "Dojo Belt (Black)")
             local _, boneCount = CheckItemInInv(inv, "Dinosaur Bones")
-            local _, eggCount = CheckItemInInv(inv, "Dragon Egg") -- Check Dragon Egg ngay trong luồng chính
+            local _, eggCount = CheckItemInInv(inv, "Dragon Egg") 
             
             -- SMART KICK
             if hasRed and not startRed then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Red Belt."); break end
@@ -369,6 +394,7 @@ task.spawn(function()
             -- ĐIỀU HƯỚNG SCRIPT
             -- ======================================
             if hasBlack then
+                ClearBlackBeltFailed() -- Đã lấy được thì xóa biến fail (nếu có)
                 if IsLearnDone() then
                     if eggCount >= 4 then
                         ActionStatus.Text = "Hành động: Đã đủ 4/4 Dragon Egg! Đã tạo file txt."
@@ -385,24 +411,20 @@ task.spawn(function()
                         ActionStatus.Text = "Hành động: Đủ Black Belt & Bones! Delay 3s Tween..."
                         task.wait(3)
                         
-                        -- Tọa độ TargetNPC từ bản script 2
                         TweenTo(CFrame.new(5773.936035, 1209.442871, 809.224548))
                         
                         ActionStatus.Text = "Hành động: Đã tới NPC. Delay 3s trước khi Speak..."
                         task.wait(3)
                         
-                        -- LOGIC SPEAK & LEARN Y HỆT BẢN SCRIPT THỨ 2 CỦA CẬU
                         local Net = game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("Net")
                         local RF = Net:FindFirstChild("RF/InteractDragonQuest") or Net["RF/InteractDragonQuest"]
                         
                         if RF then
-                            -- Bước 1: Speak (Mồi hội thoại y hệt bản 2)
                             local v371_Speak = { [1] = { NPC = "Dragon Wizard", Command = "Speak" } }
                             pcall(function() RF:InvokeServer(unpack(v371_Speak)) end)
                             
-                            task.wait(3) -- Delay 3s sau khi Speak
+                            task.wait(3)
                             
-                            -- Bước 2: LearnTether (Y hệt bản 2)
                             local v371_Learn = { [1] = { NPC = "Dragon Wizard", Command = "LearnTether" } }
                             local ok, _ = pcall(function() return RF:InvokeServer(unpack(v371_Learn)) end)
                             
@@ -419,12 +441,48 @@ task.spawn(function()
                     end
                 end
             elseif hasRed then
-                if boneCount >= 3 then ActionStatus.Text = "Hành động: Farm Dojo & Check Black..."; LoadBananaHub("Dojo")
-                else ActionStatus.Text = "Hành động: Săn Dinosaur Bones (" .. boneCount .. "/3)..."; LoadBananaHub("Golem") end
-            elseif hasPurple then ActionStatus.Text = "Hành động: Săn Red Belt..."; LoadBananaHub("Dojo")
+                local failedBones = GetBlackBeltFailed()
+                
+                if failedBones then
+                    -- Rejoin đang bù Bone vì quá 3 phút tạch Black Belt
+                    if boneCount >= failedBones + 3 then
+                        ClearBlackBeltFailed()
+                        task.wait(1)
+                        Player:Kick("\n[ Draco Hub ]\nĐã farm đủ Bone bù. Tiến hành Kick để bật lại Banana Dojo!")
+                        break
+                    else
+                        dojoStartTime = 0 -- Tránh bị đếm lại thời gian lúc bù
+                        ActionStatus.Text = "Hành động: Bù Bone vì Dojo fail ("..boneCount.."/"..(failedBones + 3).."). Chạy Golem..."
+                        LoadBananaHub("Golem")
+                    end
+                else
+                    -- Farm Dojo bình thường
+                    if boneCount >= 3 then 
+                        if dojoStartTime == 0 then dojoStartTime = tick() end -- Bắt đầu bấm giờ
+                        
+                        if tick() - dojoStartTime >= 180 then -- QUÁ 3 PHÚT (180 GIÂY)
+                            SaveBlackBeltFailed(boneCount)
+                            task.wait(1)
+                            Player:Kick("\n[ Draco Hub ]\nFarm Dojo 3 phút không ra Black Belt. Kick để farm bù Bone!")
+                            break
+                        else
+                            local timeLeft = math.max(0, math.floor(180 - (tick() - dojoStartTime)))
+                            ActionStatus.Text = "Hành động: Farm Dojo & Check Black (" .. timeLeft .. "s)..."
+                            LoadBananaHub("Dojo")
+                        end
+                    else 
+                        dojoStartTime = 0 -- Reset bộ đếm nếu xương bị tụt dưới 3
+                        ActionStatus.Text = "Hành động: Săn Dinosaur Bones (" .. boneCount .. "/3)..."
+                        LoadBananaHub("Golem") 
+                    end
+                end
+            elseif hasPurple then 
+                ActionStatus.Text = "Hành động: Săn Red Belt..."; LoadBananaHub("Dojo")
             elseif hasWhite and hasYellow and not hasOrange then
                 ActionStatus.Text = "Thiếu Orange Belt. Bật thủ công!"; if ManualDojoBtn then ManualDojoBtn.Visible = true end
-            else LoadBananaHub("Dojo") end
+            else 
+                LoadBananaHub("Dojo") 
+            end
         end
     end
 end)
