@@ -35,7 +35,7 @@ for _, name in ipairs(RawBlacklist) do
 end
 
 -- 2. LINK SCRIPT SERVER HOP CỦA VŨ
-local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa10.lua"
+local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa15.lua"
 
 -- 3. GIAO DIỆN THÔNG BÁO (Bảo vệ UI an toàn hơn bằng gethui nếu có)
 local SafeGuiParent = pcall(function() return gethui() end) and gethui() or CoreGui:FindFirstChild("RobloxGui") or CoreGui
