@@ -46,9 +46,7 @@ local CoreGui      = game:GetService("CoreGui")
 
 local Uzoth_CFrame  = CFrame.new(5661.898, 1210.877, 863.176)
 local Trade_CFrame  = CFrame.new(-12596.668, 336.671, -7556.832)
--- Tọa độ từ autobuydraco.txt
 local Wizard_CFrame = CFrame.new(5773.936035, 1209.442871, 809.224548)
--- Tọa độ từ autobuy2items.txt
 local Craft_CFrame  = CFrame.new(5864.833008, 1209.483032, 811.329224)
 
 local function CheckDragonTalon()
@@ -440,7 +438,6 @@ local function GetStatValue(statName)
     return val
 end
 
--- [SỬA Ở ĐÂY] Kiểm tra chuẩn mốc 2800 (Max Stats hiện hành)
 local function IsStatSwordBuild()
     return GetStatValue("Melee") >= 2800
        and GetStatValue("Defense") >= 2800
@@ -468,13 +465,20 @@ local function AddStatPoint(statName, amount)
     end)
 end
 
--- [SỬA Ở ĐÂY] Nếu stats đã đúng chuẩn, bỏ qua quá trình Reset và return luôn
+-- ==========================================
+-- [ĐÃ SỬA] DoStatSword: chỉ reset khi Sword CHƯA đủ 2800
+-- Nếu đang farm Sword Mastery mà Sword đã 2800 → KHÔNG reset
+-- ==========================================
 local function DoStatSword()
-    if IsStatSwordBuild() then 
-        warn("[Draco Hub] Stats Kiếm đã Max (2800). Bỏ qua Reset Stats!")
-        return 
+    -- Nếu đã đúng build Sword rồi thì bỏ qua, không làm gì cả
+    if GetStatValue("Sword") >= 2800
+       and GetStatValue("Melee") >= 2800
+       and GetStatValue("Defense") >= 2800 then
+        warn("[DracoHub] DoStatSword: Đã đủ Sword build, bỏ qua reset!")
+        return
     end
-    warn("[Draco Hub] Stats chưa đúng bộ Kiếm. Tiến hành Reset...")
+    -- Chưa đủ → reset rồi add lại
+    warn("[DracoHub] DoStatSword: Chưa đủ build, tiến hành reset & add stats...")
     ResetStat()
     task.wait(0.5)
     AddStatPoint("Melee",   2800)
@@ -484,12 +488,20 @@ local function DoStatSword()
     AddStatPoint("Sword",   2800)
 end
 
+-- ==========================================
+-- [ĐÃ SỬA] DoStatGun: chỉ reset khi Gun CHƯA đủ 2800
+-- Nếu đang farm Gun Mastery mà Gun đã 2800 → KHÔNG reset
+-- ==========================================
 local function DoStatGun()
-    if IsStatGunBuild() then 
-        warn("[Draco Hub] Stats Súng đã Max (2800). Bỏ qua Reset Stats!")
-        return 
+    -- Nếu đã đúng build Gun rồi thì bỏ qua, không làm gì cả
+    if GetStatValue("Gun") >= 2800
+       and GetStatValue("Melee") >= 2800
+       and GetStatValue("Defense") >= 2800 then
+        warn("[DracoHub] DoStatGun: Đã đủ Gun build, bỏ qua reset!")
+        return
     end
-    warn("[Draco Hub] Stats chưa đúng bộ Súng. Tiến hành Reset...")
+    -- Chưa đủ → reset rồi add lại
+    warn("[DracoHub] DoStatGun: Chưa đủ build, tiến hành reset & add stats...")
     ResetStat()
     task.wait(0.5)
     AddStatPoint("Melee",   2800)
@@ -553,14 +565,12 @@ local function DoChangeRace()
 end
 
 local function DoCraftItems()
-    -- Bước 1: requestEntrance
     pcall(function()
         local entrancePos = Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906)
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", entrancePos)
     end)
     task.wait(0.5)
 
-    -- Bước 2: Craft bằng RF/Craft + unpack
     local RFCraft
     pcall(function()
         RFCraft = game:GetService("ReplicatedStorage")
@@ -574,14 +584,12 @@ local function DoCraftItems()
         return false
     end
 
-    -- Craft Dragonheart
     pcall(function()
         local args = { [1] = "Craft", [2] = "Dragonheart", [3] = {} }
         RFCraft:InvokeServer(unpack(args))
     end)
     task.wait(3)
 
-    -- Craft Dragonstorm
     pcall(function()
         local args = { [1] = "Craft", [2] = "Dragonstorm", [3] = {} }
         RFCraft:InvokeServer(unpack(args))
@@ -667,10 +675,10 @@ local function LoadBananaHub(typeStr)
         end)
 
         if ok then
-            _G.HubLoadedType = typeStr 
+            _G.HubLoadedType = typeStr
             warn("[BananaHub] Load thành công: " .. typeStr)
         else
-            _G.HubLoadedType = "None" 
+            _G.HubLoadedType = "None"
             warn("[BananaHub] Load thất bại (" .. typeStr .. "): " .. tostring(err))
         end
 
@@ -788,7 +796,7 @@ task.spawn(function()
                                 if not heartStatDone then
                                     EquipWeapon("Dragonheart")
                                     task.wait(1)
-                                    DoStatSword()
+                                    DoStatSword()  -- Sẽ KHÔNG reset nếu Sword đã 2800
                                     task.wait(1)
                                     heartStatDone = true
                                     LoadBananaHub("HeartMastery")
@@ -803,7 +811,7 @@ task.spawn(function()
                                 if not stormStatDone then
                                     EquipWeapon("Dragonstorm")
                                     task.wait(1)
-                                    DoStatGun()
+                                    DoStatGun()  -- Sẽ KHÔNG reset nếu Gun đã 2800
                                     task.wait(1)
                                     stormStatDone = true
                                     LoadBananaHub("StormMastery")
@@ -918,6 +926,7 @@ task.spawn(function()
                         end
 
                     else
+                        -- ===== HỌC TETHER =====
                         if boneCount >= 3 then
                             CURRENT_STATE = "LEARN_TETHER"
                             ActionStatus.Text = "Hành động: Đủ Belt & Bone! Bay đến NPC..."
@@ -957,13 +966,14 @@ task.spawn(function()
                     end
 
                 else
+                    -- Chưa có Black Belt → farm Dojo
                     if CURRENT_STATE ~= "FARM_DOJO_EARLY" then
                         CURRENT_STATE = "FARM_DOJO_EARLY"
                         LoadBananaHub("Dojo")
                     end
                     ActionStatus.Text = "Hành động: Đang cày Belt tại Dojo..."
                 end
-            end 
+            end -- end if invValid
         end
-    end 
+    end -- end while
 end)
