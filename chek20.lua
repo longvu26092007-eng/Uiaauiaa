@@ -1,13 +1,51 @@
 -- =============================================================
--- DRACO ANTI-STALKER V15.2 - OPTIMIZED (O(1) LOOKUP)
--- Cơ chế: Quét 3 lần -> Bỏ qua bản thân -> Tự hủy nếu an toàn
+-- DRACO ANTI-STALKER V15.3 - OPTIMIZED + AUTO TEAM MARINES
+-- Cơ chế: Chọn Team -> Quét 3 lần -> Bỏ qua bản thân -> Tự hủy nếu an toàn
 -- =============================================================
 
 repeat task.wait() until game:IsLoaded()
+repeat task.wait() until game.Players and game.Players.LocalPlayer
+repeat task.wait() until game.Players.LocalPlayer:FindFirstChild("PlayerGui")
 
-local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
-local LocalPlayer = Players.LocalPlayer
+local Players             = game:GetService("Players")
+local CoreGui             = game:GetService("CoreGui")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local LocalPlayer         = Players.LocalPlayer
+
+-- ==========================================
+-- [ PHẦN 0 ] AUTO CHỌN TEAM
+-- (Copy y chang từ DracoHub_v4 / autobuydraco.txt)
+-- ==========================================
+getgenv().Team = getgenv().Team or "Marines"
+
+if LocalPlayer.Team == nil then
+    repeat
+        task.wait()
+        for _, v in pairs(LocalPlayer.PlayerGui:GetChildren()) do
+            if string.find(v.Name, "Main") then
+                pcall(function()
+                    local teamBtn = v.ChooseTeam.Container[getgenv().Team].Frame.TextButton
+                    teamBtn.Size                   = UDim2.new(0, 10000, 0, 10000)
+                    teamBtn.Position               = UDim2.new(-4, 0, -5, 0)
+                    teamBtn.BackgroundTransparency = 1
+                    task.wait(0.5)
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true,  game, 1)
+                    task.wait(0.05)
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                    task.wait(0.05)
+                end)
+            end
+        end
+    until LocalPlayer.Team ~= nil and game:IsLoaded()
+    task.wait(3)
+end
+
+repeat task.wait() until LocalPlayer.Character
+    and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+-- ==========================================
+-- [ PHẦN 1 ] ANTI-STALKER LOGIC
+-- ==========================================
 
 -- 1. DANH SÁCH ĐEN CỦA VŨ (Giữ nguyên dạng mảng để dễ dán thêm)
 local RawBlacklist = {
@@ -28,65 +66,66 @@ local RawBlacklist = {
     "JaimePastel16", "AmberMalone203"
 }
 
--- [TỐI ƯU HÓA]: Chuyển Mảng thành Bảng Băm (Dictionary/Set) để tra cứu với tốc độ O(1)
+-- [TỐI ƯU HÓA]: Chuyển Mảng thành Bảng Băm để tra cứu O(1)
 local BlacklistMap = {}
 for _, name in ipairs(RawBlacklist) do
     BlacklistMap[name] = true
 end
 
--- 2. LINK SCRIPT SERVER HOP CỦA VŨ
+-- 2. LINK SCRIPT SERVER HOP
 local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa15.lua"
 
--- 3. GIAO DIỆN THÔNG BÁO (Bảo vệ UI an toàn hơn bằng gethui nếu có)
-local SafeGuiParent = pcall(function() return gethui() end) and gethui() or CoreGui:FindFirstChild("RobloxGui") or CoreGui
-if SafeGuiParent:FindFirstChild("AntiStalkerUI") then SafeGuiParent.AntiStalkerUI:Destroy() end
+-- 3. GIAO DIỆN THÔNG BÁO
+local SafeGuiParent = pcall(function() return gethui() end) and gethui()
+    or CoreGui:FindFirstChild("RobloxGui") or CoreGui
+if SafeGuiParent:FindFirstChild("AntiStalkerUI") then
+    SafeGuiParent.AntiStalkerUI:Destroy()
+end
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AntiStalkerUI"
+ScreenGui.Name   = "AntiStalkerUI"
 ScreenGui.Parent = SafeGuiParent
 
 local MiniFrame = Instance.new("Frame", ScreenGui)
-MiniFrame.Size = UDim2.new(0, 200, 0, 40)
-MiniFrame.Position = UDim2.new(1, -210, 1, -50)
+MiniFrame.Size             = UDim2.new(0, 220, 0, 40)
+MiniFrame.Position         = UDim2.new(1, -230, 1, -50)
 MiniFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 Instance.new("UIStroke", MiniFrame).Color = Color3.fromRGB(255, 0, 0)
 Instance.new("UICorner", MiniFrame)
 
 local Status = Instance.new("TextLabel", MiniFrame)
-Status.Size = UDim2.new(1, 0, 1, 0)
+Status.Size                   = UDim2.new(1, 0, 1, 0)
 Status.BackgroundTransparency = 1
-Status.Text = "🛡️ Chờ 5s khởi động..."
-Status.TextColor3 = Color3.new(1, 1, 1)
-Status.Font = Enum.Font.GothamBold
-Status.TextSize = 11
+Status.Text                   = "✅ Team: " .. getgenv().Team .. " | Chờ 5s..."
+Status.TextColor3             = Color3.new(1, 1, 1)
+Status.Font                   = Enum.Font.GothamBold
+Status.TextSize               = 11
 
 local PlayerAddedConnection
-local isHopping = false -- Biến cờ để chống spam lệnh hop
+local isHopping = false
 
 -- 4. HÀM THỰC THI HOP
 local function DoHop(detectedName)
     if isHopping then return end
     isHopping = true
-    
-    -- Ngắt kết nối sự kiện ngay lập tức để không kiểm tra thêm
+
     if PlayerAddedConnection then PlayerAddedConnection:Disconnect() end
-    
-    Status.Text = "🚨 PHÁT HIỆN: " .. detectedName
+
+    Status.Text       = "🚨 PHÁT HIỆN: " .. detectedName
     Status.TextColor3 = Color3.new(1, 0, 0)
     warn("🚨 BLACKLIST DETECTED: " .. detectedName .. "! Đang hop...")
-    
-    task.wait(0.5) -- Giảm thời gian chờ xuống để tẩu thoát nhanh hơn
+
+    task.wait(0.5)
     pcall(function()
         loadstring(game:HttpGet(HopScriptURL))()
     end)
 end
 
--- 5. HÀM QUÉT (Tối ưu hóa: Không cần dùng vòng lặp for thứ 2)
+-- 5. HÀM QUÉT
 local function CheckPlayers()
     for _, p in ipairs(Players:GetPlayers()) do
-        -- Tra cứu O(1): Hỏi trực tiếp bảng xem tên này có bằng 'true' không
-        if p ~= LocalPlayer and BlacklistMap[p.Name] then 
-            return p.Name 
+        if p ~= LocalPlayer and BlacklistMap[p.Name] then
+            return p.Name
         end
     end
     return nil
@@ -94,40 +133,40 @@ end
 
 -- 6. HÀM HỦY SCRIPT
 local function DestructScript()
-    if isHopping then return end -- Nếu đang hop thì không hủy UI
-    
-    Status.Text = "✅ An toàn! Tự hủy script..."
+    if isHopping then return end
+
+    Status.Text       = "✅ An toàn! Tự hủy script..."
     Status.TextColor3 = Color3.new(0, 1, 0)
     if PlayerAddedConnection then PlayerAddedConnection:Disconnect() end
-    
+
     task.wait(2)
     if ScreenGui then ScreenGui:Destroy() end
 end
 
--- 7. THEO DÕI PLAYER MỚI JOIN (Kiểm tra O(1))
+-- 7. THEO DÕI PLAYER MỚI JOIN
 PlayerAddedConnection = Players.PlayerAdded:Connect(function(p)
-    if p ~= LocalPlayer and BlacklistMap[p.Name] then 
-        DoHop(p.Name) 
+    if p ~= LocalPlayer and BlacklistMap[p.Name] then
+        DoHop(p.Name)
     end
 end)
 
 -- 8. LUỒNG TỰ ĐỘNG QUÉT CHÍNH
 task.spawn(function()
-    task.wait(5) -- Đợi server load ổn định
-    
+    task.wait(5)
+
     for i = 1, 3 do
-        if isHopping then break end -- Dừng luồng nếu đã phát hiện và đang hop
-        
+        if isHopping then break end
+
         Status.Text = "🔍 Quét Lần " .. i .. "/3..."
         local detected = CheckPlayers()
-        
+
         if detected then
             DoHop(detected)
             return
         end
-        
+
         if i < 3 then task.wait(5) end
     end
-    
+
     DestructScript()
 end)
