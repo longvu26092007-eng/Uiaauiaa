@@ -648,7 +648,7 @@ local function LoadBananaHub(typeStr)
                 ["Select Weapon"]              = "Melee",
                 ["Select Method Farm"]         = "Farm Bones",
                 ["Select Method Farm Mastery"] = "Gun",
-                ["Health %"]                   = "25",
+                ["Health %"]                   = "45",
                 ["Farm Mastery"]               = true,
                 ["Start Farm"]                 = true,
             }
