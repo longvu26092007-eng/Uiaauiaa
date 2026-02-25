@@ -524,8 +524,6 @@ end
 -- [ PHẦN 6 ACTIONS ] ĐỔI RACE & CRAFT
 -- ==========================================
 
--- FIX: Dùng RF/InteractDragonQuest + unpack (tham khảo autobuydraco.txt)
--- Chỉ SaveDoneChangeRace khi remote thành công (ok == true)
 local function DoChangeRace()
     local success = false
     local ok, err = pcall(function()
@@ -544,7 +542,6 @@ local function DoChangeRace()
     end
 end
 
--- FIX: requestEntrance trước, sau đó craft bằng RF/Craft + unpack (tham khảo autobuy2items.txt)
 local function DoCraftItems()
     -- Bước 1: requestEntrance
     pcall(function()
@@ -586,6 +583,9 @@ end
 
 -- ==========================================
 -- TRÌNH QUẢN LÝ LOAD SCRIPT BANANA HUB
+-- [FIX 1] HubLoadedType chỉ gán SAU KHI load thành công
+-- [FIX 2] HubIsLoading luôn reset dù lỗi hay không
+-- [FIX 3] Log lỗi ra warn để dễ debug
 -- ==========================================
 _G.HubLoadedType = _G.HubLoadedType or "None"
 _G.HubIsLoading  = _G.HubIsLoading  or false
@@ -594,8 +594,8 @@ local function LoadBananaHub(typeStr)
     if _G.HubLoadedType == typeStr then return end
     if _G.HubIsLoading then return end
 
-    _G.HubLoadedType = typeStr
-    _G.HubIsLoading  = true
+    -- [FIX 1] KHÔNG gán HubLoadedType ở đây - chỉ gán sau khi load xong
+    _G.HubIsLoading = true
 
     task.spawn(function()
         local hubKey = "51e126ee832d3c4fff7b6178"
@@ -655,12 +655,24 @@ local function LoadBananaHub(typeStr)
         end
 
         getgenv().Key = hubKey
-        pcall(function()
+
+        -- [FIX 2+3] Bắt lỗi đúng cách, gán HubLoadedType chỉ khi thành công
+        local ok, err = pcall(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))()
         end)
 
-        if ManualDojoBtn then ManualDojoBtn.Visible = false end
+        if ok then
+            _G.HubLoadedType = typeStr  -- chỉ gán khi load THÀNH CÔNG
+            warn("[BananaHub] Load thành công: " .. typeStr)
+        else
+            _G.HubLoadedType = "None"   -- reset để có thể retry lần sau
+            warn("[BananaHub] Load thất bại (" .. typeStr .. "): " .. tostring(err))
+        end
+
+        -- [FIX 2] Luôn reset HubIsLoading dù thành công hay lỗi
         _G.HubIsLoading = false
+
+        if ManualDojoBtn then ManualDojoBtn.Visible = false end
     end)
 end
 
@@ -813,20 +825,17 @@ task.spawn(function()
 
                         elseif not doneRaceJson then
                             -- === BƯỚC 1: ĐỔI TỘC ===
-                            -- Điều kiện vào Phase 6: đủ 4 egg HOẶC đã có Draco race
                             local isDracoRace = IsDracoDetected()
                             local _, scaleCountCheck = CheckItemInInv(inv, "Dragon Scale")
                             local canEnterP6 = isDracoRace or (eggCount >= 4) or hasHeart or hasStorm or (scaleCountCheck > 0)
 
                             if not canEnterP6 then
-                                -- Chưa đủ điều kiện → tiếp tục hunt egg
                                 if CURRENT_STATE ~= "HUNT_EGG" then
                                     CURRENT_STATE = "HUNT_EGG"
                                     LoadBananaHub("Golem")
                                 end
                                 ActionStatus.Text = "Hành động: Săn Dragon Egg (" .. eggCount .. "/4)..."
                             else
-                                -- Đủ điều kiện → bay đến Wizard đổi tộc
                                 if CURRENT_STATE ~= "DO_CHANGE_RACE" then
                                     CURRENT_STATE = "DO_CHANGE_RACE"
                                 end
@@ -834,7 +843,6 @@ task.spawn(function()
                                 local arrived = TweenTo(Wizard_CFrame)
                                 if arrived then
                                     task.wait(0.2)
-                                    -- FIX: DoChangeRace chỉ ghi file khi remote thành công
                                     local raceOk = DoChangeRace()
                                     if raceOk then
                                         task.wait(1)
@@ -856,8 +864,6 @@ task.spawn(function()
                             local _, scaleCount = CheckItemInInv(inv, "Dragon Scale")
                             local _, emberCount = CheckItemInInv(inv, "Blaze Ember")
 
-                            -- FIX: Kick Dragon Scale khi đạt >= 5 bất kể state
-                            -- (không cần phải đang ở FARM_DRAGON_SCALE mới kick)
                             if scaleCount >= 5 then
                                 if CURRENT_STATE == "FARM_DRAGON_SCALE" then
                                     task.wait(1)
@@ -866,7 +872,6 @@ task.spawn(function()
                                 end
                             end
 
-                            -- Kick Blaze Ember khi đạt >= 55
                             if CURRENT_STATE == "FARM_BLAZE_EMBER" and emberCount >= 55 then
                                 SaveBlazeEmberCount(emberCount)
                                 task.wait(1)
@@ -875,7 +880,6 @@ task.spawn(function()
                             end
 
                             if scaleCount < 5 then
-                                -- Farm Dragon Scale
                                 if CURRENT_STATE ~= "FARM_DRAGON_SCALE" then
                                     CURRENT_STATE = "FARM_DRAGON_SCALE"
                                     LoadBananaHub("DragonScale")
@@ -883,14 +887,12 @@ task.spawn(function()
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragon Scale (" .. scaleCount .. "/5)..."
 
                             elseif emberCount < 55 then
-                                -- Farm Blaze Ember
                                 if CURRENT_STATE ~= "FARM_BLAZE_EMBER" then
                                     CURRENT_STATE  = "FARM_BLAZE_EMBER"
                                     lastBlazeCount = emberCount
                                     lastBlazeTime  = tick()
                                     LoadBananaHub("BlazeEmber")
                                 end
-                                -- Stall detection: nếu 60s không tăng thì gọi hopa10
                                 if emberCount > lastBlazeCount then
                                     lastBlazeCount = emberCount; lastBlazeTime = tick(); hopa10Running = false
                                 end
@@ -903,7 +905,6 @@ task.spawn(function()
                                 ActionStatus.Text = "Hành động: [P6] Farm Blaze Ember (" .. emberCount .. "/55)..."
 
                             else
-                                -- Đủ cả scale lẫn ember → bay đến Craft NPC
                                 if CURRENT_STATE ~= "DO_CRAFT" then
                                     CURRENT_STATE = "DO_CRAFT"
                                 end
@@ -911,7 +912,6 @@ task.spawn(function()
                                 local arrived = TweenTo(Craft_CFrame)
                                 if arrived then
                                     task.wait(0.2)
-                                    -- FIX: DoCraftItems dùng requestEntrance + RF/Craft + unpack
                                     local craftOk = DoCraftItems()
                                     if craftOk then
                                         task.wait(3)
@@ -937,7 +937,6 @@ task.spawn(function()
                             local arrived = TweenTo(Wizard_CFrame)
                             if arrived then
                                 task.wait(3)
-                                -- FIX: Dùng Modules.Net (đúng path) + unpack cho cả Speak và LearnTether
                                 local ok1, RF1 = pcall(function()
                                     return game:GetService("ReplicatedStorage")
                                         :WaitForChild("Modules")
