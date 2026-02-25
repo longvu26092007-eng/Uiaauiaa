@@ -46,7 +46,9 @@ local CoreGui      = game:GetService("CoreGui")
 
 local Uzoth_CFrame  = CFrame.new(5661.898, 1210.877, 863.176)
 local Trade_CFrame  = CFrame.new(-12596.668, 336.671, -7556.832)
+-- Tọa độ từ autobuydraco.txt
 local Wizard_CFrame = CFrame.new(5773.936035, 1209.442871, 809.224548)
+-- Tọa độ từ autobuy2items.txt
 local Craft_CFrame  = CFrame.new(5864.833008, 1209.483032, 811.329224)
 
 local function CheckDragonTalon()
@@ -109,7 +111,7 @@ end
 -- ==========================================
 -- [ PHẦN 2 : Check Mastery Dragon Talon & Smart Kick ]
 -- ==========================================
-local ActionStatus 
+local ActionStatus -- gán ở Phần 3
 
 local function GetWeaponMastery(weaponName)
     local p    = game.Players.LocalPlayer
@@ -202,7 +204,7 @@ InfoPanel.BackgroundTransparency = 1
 
 local SpawnLabel = Instance.new("TextLabel", InfoPanel)
 SpawnLabel.Size               = UDim2.new(1, 0, 0, 25)
-SpawnLabel.Text = "Dragon Talon: Đang kiểm tra..."
+SpawnLabel.Text               = "Dragon Talon: Đang kiểm tra..."
 SpawnLabel.TextColor3         = Color3.fromRGB(255, 255, 255)
 SpawnLabel.Font               = Enum.Font.GothamBold
 SpawnLabel.BackgroundTransparency = 1
@@ -438,16 +440,17 @@ local function GetStatValue(statName)
     return val
 end
 
+-- [SỬA Ở ĐÂY] Hạ mốc kiểm tra xuống 2500 để chắc chắn không bị false nếu game cap max stats là 2550
 local function IsStatSwordBuild()
-    return GetStatValue("Melee") >= 2800
-       and GetStatValue("Defense") >= 2800
-       and GetStatValue("Sword") >= 2800
+    return GetStatValue("Melee") >= 2500
+       and GetStatValue("Defense") >= 2500
+       and GetStatValue("Sword") >= 2500
 end
 
 local function IsStatGunBuild()
-    return GetStatValue("Melee") >= 2800
-       and GetStatValue("Defense") >= 2800
-       and GetStatValue("Gun") >= 2800
+    return GetStatValue("Melee") >= 2500
+       and GetStatValue("Defense") >= 2500
+       and GetStatValue("Gun") >= 2500
 end
 
 -- === STAT RESET & ADD POINT ===
@@ -465,15 +468,13 @@ local function AddStatPoint(statName, amount)
     end)
 end
 
--- ==========================================
--- SỬA PHẦN NÀY: KIỂM TRA STATS TRƯỚC KHI RESET
--- ==========================================
+-- [SỬA Ở ĐÂY] Nếu stats đã đúng chuẩn, bỏ qua quá trình Reset và return luôn
 local function DoStatSword()
     if IsStatSwordBuild() then 
-        warn("[DracoHub] Stats đã đúng bộ Sword (2800), bỏ qua Reset.")
+        warn("[Draco Hub] Stats Kiếm đã Max. Bỏ qua Reset Stats!")
         return 
     end
-    warn("[DracoHub] Stats không khớp bộ Sword, tiến hành Reset.")
+    warn("[Draco Hub] Stats chưa đúng bộ Kiếm. Tiến hành Reset...")
     ResetStat()
     task.wait(0.5)
     AddStatPoint("Melee",   2800)
@@ -485,10 +486,10 @@ end
 
 local function DoStatGun()
     if IsStatGunBuild() then 
-        warn("[DracoHub] Stats đã đúng bộ Gun (2800), bỏ qua Reset.")
+        warn("[Draco Hub] Stats Súng đã Max. Bỏ qua Reset Stats!")
         return 
     end
-    warn("[DracoHub] Stats không khớp bộ Gun, tiến hành Reset.")
+    warn("[Draco Hub] Stats chưa đúng bộ Súng. Tiến hành Reset...")
     ResetStat()
     task.wait(0.5)
     AddStatPoint("Melee",   2800)
@@ -552,12 +553,14 @@ local function DoChangeRace()
 end
 
 local function DoCraftItems()
+    -- Bước 1: requestEntrance
     pcall(function()
         local entrancePos = Vector3.new(5661.5322265625, 1013.0907592773438, -334.9649963378906)
         game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("requestEntrance", entrancePos)
     end)
     task.wait(0.5)
 
+    -- Bước 2: Craft bằng RF/Craft + unpack
     local RFCraft
     pcall(function()
         RFCraft = game:GetService("ReplicatedStorage")
@@ -571,12 +574,14 @@ local function DoCraftItems()
         return false
     end
 
+    -- Craft Dragonheart
     pcall(function()
         local args = { [1] = "Craft", [2] = "Dragonheart", [3] = {} }
         RFCraft:InvokeServer(unpack(args))
     end)
     task.wait(3)
 
+    -- Craft Dragonstorm
     pcall(function()
         local args = { [1] = "Craft", [2] = "Dragonstorm", [3] = {} }
         RFCraft:InvokeServer(unpack(args))
@@ -662,10 +667,10 @@ local function LoadBananaHub(typeStr)
         end)
 
         if ok then
-            _G.HubLoadedType = typeStr
+            _G.HubLoadedType = typeStr 
             warn("[BananaHub] Load thành công: " .. typeStr)
         else
-            _G.HubLoadedType = "None"
+            _G.HubLoadedType = "None" 
             warn("[BananaHub] Load thất bại (" .. typeStr .. "): " .. tostring(err))
         end
 
@@ -704,6 +709,7 @@ task.spawn(function()
     while task.wait(4) do
         local currentMastery = GetWeaponMastery("Dragon Talon")
 
+        -- ===== PHASE 1: Farm Dragon Talon Mastery =====
         if currentMastery < 500 then
             if CURRENT_STATE ~= "FARM_BONE" then
                 CURRENT_STATE = "FARM_BONE"
@@ -725,16 +731,21 @@ task.spawn(function()
                 local _, boneCount = CheckItemInInv(inv, "Dinosaur Bones")
                 local _, eggCount  = CheckItemInInv(inv, "Dragon Egg")
 
+                -- SMART KICK: Nhận Belt/Bones mới
                 if hasRed   and not startRed   then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Red Belt."); break end
                 if hasBlack and not startBlack then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Black Belt."); break end
                 if hasRed and boneCount >= 3 and startBones < 3 then
                     task.wait(1); Player:Kick("\n[ Draco Hub ]\nĐủ 3 Dinosaur Bones."); break
                 end
 
+                -- ===== ĐIỀU HƯỚNG THEO BELT =====
                 if hasBlack then
                     ClearBlackBeltFailed()
 
                     if IsLearnDone() then
+                        -- ==========================================
+                        -- [ PHẦN 6 ] SAU KHI HỌC TETHER XONG
+                        -- ==========================================
                         local doneRaceJson  = IsDoneChangeRace()
                         local doneCraftJson = IsDoneCraft()
                         local hasHeart      = CheckHasWeapon("Dragonheart")
@@ -743,11 +754,13 @@ task.spawn(function()
                         if hasHeart and hasStorm and not doneCraftJson then
                             SaveDoneCraft()
                             doneCraftJson = true
+                            ActionStatus.Text = "Hành động: [P6] Đã phát hiện Heart+Storm, ghi DoneCraft!"
                         end
 
                         if not doneRaceJson and IsDracoDetected() then
                             SaveDoneChangeRace()
                             doneRaceJson = true
+                            ActionStatus.Text = "Hành động: [P6] Phát hiện tộc Draco, ghi DoneChangeRace!"
                         end
 
                         if doneRaceJson and doneCraftJson then
@@ -775,7 +788,7 @@ task.spawn(function()
                                 if not heartStatDone then
                                     EquipWeapon("Dragonheart")
                                     task.wait(1)
-                                    DoStatSword() -- Gọi hàm đã sửa: Check stat xong mới Reset
+                                    DoStatSword()
                                     task.wait(1)
                                     heartStatDone = true
                                     LoadBananaHub("HeartMastery")
@@ -790,7 +803,7 @@ task.spawn(function()
                                 if not stormStatDone then
                                     EquipWeapon("Dragonstorm")
                                     task.wait(1)
-                                    DoStatGun() -- Gọi hàm đã sửa: Check stat xong mới Reset
+                                    DoStatGun()
                                     task.wait(1)
                                     stormStatDone = true
                                     LoadBananaHub("StormMastery")
@@ -950,7 +963,7 @@ task.spawn(function()
                     end
                     ActionStatus.Text = "Hành động: Đang cày Belt tại Dojo..."
                 end
-            end
+            end 
         end
-    end
+    end 
 end)
