@@ -49,6 +49,16 @@ local Trade_CFrame  = CFrame.new(-12596.668, 336.671, -7556.832)
 local Wizard_CFrame = CFrame.new(5773.936035, 1209.442871, 809.224548)
 local Craft_CFrame  = CFrame.new(5864.833008, 1209.483032, 811.329224)
 
+local FRAGMENT_MIN = 12000  -- Ngưỡng fragment tối thiểu
+
+local function GetFragments()
+    local val = 0
+    pcall(function()
+        val = Player.Data.Fragments.Value
+    end)
+    return val
+end
+
 local function CheckDragonTalon()
     local character = Player.Character
     local backpack  = Player:FindFirstChild("Backpack")
@@ -147,9 +157,10 @@ end
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = "DracoHubUI"
 
+-- Tăng chiều cao frame để chứa thêm dòng Fragment
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size             = UDim2.new(0, 450, 0, 160)
-MainFrame.Position         = UDim2.new(0.5, -225, 0.5, -80)
+MainFrame.Size             = UDim2.new(0, 450, 0, 185)
+MainFrame.Position         = UDim2.new(0.5, -225, 0.5, -92)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.Active           = true
 MainFrame.Draggable        = true
@@ -229,6 +240,17 @@ MasteryLabel.BackgroundTransparency = 1
 MasteryLabel.TextSize           = 13
 MasteryLabel.TextXAlignment     = Enum.TextXAlignment.Left
 
+-- [ MỚI ] Label Fragment ngay dưới Mastery
+local FragmentLabel = Instance.new("TextLabel", InfoPanel)
+FragmentLabel.Size               = UDim2.new(1, 0, 0, 25)
+FragmentLabel.Position           = UDim2.new(0, 0, 0, 75)
+FragmentLabel.Text               = "Fragment: Đang kiểm tra..."
+FragmentLabel.TextColor3         = Color3.fromRGB(180, 130, 255)
+FragmentLabel.Font               = Enum.Font.GothamBold
+FragmentLabel.BackgroundTransparency = 1
+FragmentLabel.TextSize           = 13
+FragmentLabel.TextXAlignment     = Enum.TextXAlignment.Left
+
 -- ==========================================
 -- [ PHẦN 4 & 5 ] MAIN LOGIC
 -- ==========================================
@@ -256,6 +278,20 @@ task.spawn(function()
             MasteryLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
         end
         task.wait(1)
+    end
+end)
+
+-- [ MỚI ] Loop cập nhật Fragment label liên tục
+task.spawn(function()
+    while true do
+        local frag = GetFragments()
+        FragmentLabel.Text = "Fragment: " .. frag .. " / " .. FRAGMENT_MIN
+        if frag >= FRAGMENT_MIN then
+            FragmentLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+        else
+            FragmentLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
+        task.wait(2)
     end
 end)
 
@@ -377,13 +413,9 @@ local function ClearBlackBeltFailed()
     end
 end
 
--- ==========================================
--- SaveDoneChangeRace / SaveDoneCraft
--- Chỉ ghi nếu chưa có trong file, không ghi đè lại
--- ==========================================
 local function SaveDoneChangeRace()
     local data = ReadJson()
-    if data.DoneChangeRace == true then return end  -- đã có rồi, bỏ qua
+    if data.DoneChangeRace == true then return end
     data.DoneChangeRace = true
     WriteJson(data)
 end
@@ -395,7 +427,7 @@ end
 
 local function SaveDoneCraft()
     local data = ReadJson()
-    if data.DoneCraft == true then return end  -- đã có rồi, bỏ qua
+    if data.DoneCraft == true then return end
     data.DoneCraft = true
     WriteJson(data)
 end
@@ -405,13 +437,7 @@ local function IsDoneCraft()
     return data.DoneCraft == true
 end
 
--- ==========================================
--- Lưu/đọc trạng thái stat build vào JSON
--- format: { Melee=2800, Defense=2800, Sword=2800, Gun=0 }
---      hoặc { Melee=2800, Defense=2800, Sword=0,    Gun=2800 }
--- ==========================================
 local function SaveStatBuild(buildType)
-    -- buildType: "Sword" hoặc "Gun"
     local data = ReadJson()
     if buildType == "Sword" then
         data.StatBuild = { Melee=2800, Defense=2800, Sword=2800, Gun=0 }
@@ -424,7 +450,7 @@ end
 
 local function GetStatBuildFromJson()
     local data = ReadJson()
-    return data.StatBuild  -- nil nếu chưa có
+    return data.StatBuild
 end
 
 -- ==========================================
@@ -457,9 +483,6 @@ local function IsDracoDetected()
     return string.find(race, "Draco") ~= nil or string.find(race, "Dragon") ~= nil
 end
 
--- ==========================================
--- STAT RESET & ADD POINT
--- ==========================================
 local function ResetStat()
     local CommF = game:GetService("ReplicatedStorage").Remotes.CommF_
     pcall(function() CommF:InvokeServer("BlackbeardReward", "Refund", "1") end)
@@ -474,30 +497,14 @@ local function AddStatPoint(statName, amount)
     end)
 end
 
--- ==========================================
--- DoStatForMastery
--- Nhận vào loại weapon đang farm mastery: "Heart"(Sword) hoặc "Storm"(Gun)
--- Logic:
---   1. Check mastery weapon kia xem đã xong chưa
---   2. Đọc file json xem build hiện tại là gì
---   3. Nếu build trong json đúng với yêu cầu → KHÔNG reset
---   4. Nếu build sai hoặc chưa có → reset & add & ghi json
--- ==========================================
 local function DoStatForMastery(farmType)
-    -- farmType = "Heart" → cần Sword build
-    -- farmType = "Storm" → cần Gun build
     local heartMastery = GetWeaponMastery("Dragonheart")
     local stormMastery = GetWeaponMastery("Dragonstorm")
-
-    local needBuild   -- build cần thiết: "Sword" hoặc "Gun"
-    local skipStat    -- tên stat không cần đổi (đã farm xong)
+    local needBuild
 
     if farmType == "Heart" then
-        -- Đang farm Heart mastery → cần Sword build
         needBuild = "Sword"
     elseif farmType == "Storm" then
-        -- Đang farm Storm mastery → cần Gun build
-        -- Nhưng nếu Heart chưa xong thì vẫn là Sword build
         if heartMastery < 500 then
             needBuild = "Sword"
         else
@@ -508,11 +515,9 @@ local function DoStatForMastery(farmType)
     warn("[DracoHub] DoStatForMastery → farmType=" .. farmType .. " needBuild=" .. needBuild
         .. " HeartMastery=" .. heartMastery .. " StormMastery=" .. stormMastery)
 
-    -- Đọc build hiện tại từ JSON
     local jsonBuild = GetStatBuildFromJson()
 
     if jsonBuild then
-        -- Kiểm tra build trong JSON có khớp với cần không
         if needBuild == "Sword" then
             if (jsonBuild.Sword or 0) >= 2800
             and (jsonBuild.Melee or 0) >= 2800
@@ -530,7 +535,6 @@ local function DoStatForMastery(farmType)
         end
     end
 
-    -- Build sai hoặc chưa có → reset & add
     warn("[DracoHub] DoStatForMastery: Cần đổi sang " .. needBuild .. " build, tiến hành reset...")
     ResetStat()
     task.wait(0.5)
@@ -549,7 +553,6 @@ local function DoStatForMastery(farmType)
     end
 end
 
--- === EQUIP WEAPON ===
 local function CheckHasWeapon(weaponName)
     local bp  = Player:FindFirstChild("Backpack")
     local chr = Player.Character
@@ -566,7 +569,6 @@ local function EquipWeapon(weaponName)
     end)
 end
 
--- === GHI BLAZE EMBER ===
 local BlazeJsonFile = Player.Name .. ".json"
 local function SaveBlazeEmberCount(count)
     pcall(function()
@@ -704,6 +706,14 @@ local function LoadBananaHub(typeStr)
                 ["Farm Mastery"]               = true,
                 ["Start Farm"]                 = true,
             }
+        elseif typeStr == "FarmFragment" then
+            -- [ PHẦN 1.1 ] Farm Katakuri để lấy Fragment
+            hubKey = "1f34f32b6f1917a66d57e8c6"
+            getgenv().Config = {
+                ["Select Method Farm"] = "Farm Katakuri",
+                ["Hop Find Katakuri"]  = true,
+                ["Start Farm"]         = true,
+            }
         end
 
         getgenv().Key = hubKey
@@ -753,8 +763,33 @@ task.spawn(function()
     local masteryFileCreated = false
 
     while task.wait(4) do
+
+        -- ==========================================
+        -- [ PHẦN 1.1 ] KIỂM TRA FRAGMENT TRƯỚC TIÊN
+        -- Nếu fragment < 12000 → farm Katakuri, chặn mọi phase khác
+        -- ==========================================
+        local currentFrag = GetFragments()
+        if currentFrag < FRAGMENT_MIN then
+            if CURRENT_STATE ~= "FARM_FRAGMENT" then
+                CURRENT_STATE = "FARM_FRAGMENT"
+                LoadBananaHub("FarmFragment")
+            end
+            ActionStatus.Text = "Hành động: [Fragment] Đang farm Fragment (" .. currentFrag .. "/" .. FRAGMENT_MIN .. ")..."
+            continue  -- bỏ qua toàn bộ logic bên dưới, đợi vòng lặp tiếp theo
+        end
+
+        -- Fragment đã đủ → chạy các phase theo tuần tự bình thường
+        -- Nếu vừa thoát khỏi FARM_FRAGMENT thì reset state để tiếp tục đúng phase
+        if CURRENT_STATE == "FARM_FRAGMENT" then
+            CURRENT_STATE = "UNKNOWN"
+            _G.HubLoadedType = "None"  -- cho phép load lại hub đúng loại
+            ActionStatus.Text = "Hành động: Fragment đủ rồi! Tiếp tục kịch bản..."
+            task.wait(2)
+        end
+
         local currentMastery = GetWeaponMastery("Dragon Talon")
 
+        -- ===== PHASE 1: Farm Dragon Talon Mastery =====
         if currentMastery < 500 then
             if CURRENT_STATE ~= "FARM_BONE" then
                 CURRENT_STATE = "FARM_BONE"
@@ -791,7 +826,6 @@ task.spawn(function()
                         local hasHeart      = CheckHasWeapon("Dragonheart")
                         local hasStorm      = CheckHasWeapon("Dragonstorm")
 
-                        -- Chỉ ghi nếu chưa có (hàm SaveDoneCraft/SaveDoneChangeRace tự kiểm tra)
                         if hasHeart and hasStorm and not doneCraftJson then
                             SaveDoneCraft()
                             doneCraftJson = true
@@ -821,20 +855,15 @@ task.spawn(function()
                                 CURRENT_STATE = "PHASE6_DONE"
                             end
 
-                            -- ==========================================
-                            -- FARM HEART MASTERY (Dragonheart - Sword)
-                            -- ==========================================
                             if heartMastery < 500 then
                                 if CURRENT_STATE ~= "FARM_HEART_MASTERY" then
                                     CURRENT_STATE = "FARM_HEART_MASTERY"
                                 end
                                 if not heartStatDone then
-                                    -- Equip cả 2 weapon trước
                                     EquipWeapon("Dragonheart")
                                     task.wait(0.5)
                                     EquipWeapon("Dragonstorm")
                                     task.wait(0.5)
-                                    -- Check & set stat dựa trên mastery
                                     DoStatForMastery("Heart")
                                     task.wait(1)
                                     heartStatDone = true
@@ -842,20 +871,15 @@ task.spawn(function()
                                 end
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragonheart Mastery (" .. heartMastery .. "/500)..."
 
-                            -- ==========================================
-                            -- FARM STORM MASTERY (Dragonstorm - Gun)
-                            -- ==========================================
                             elseif stormMastery < 500 then
                                 if CURRENT_STATE ~= "FARM_STORM_MASTERY" then
                                     CURRENT_STATE = "FARM_STORM_MASTERY"
                                 end
                                 if not stormStatDone then
-                                    -- Equip cả 2 weapon trước
                                     EquipWeapon("Dragonstorm")
                                     task.wait(0.5)
                                     EquipWeapon("Dragonheart")
                                     task.wait(0.5)
-                                    -- Check & set stat dựa trên mastery
                                     DoStatForMastery("Storm")
                                     task.wait(1)
                                     stormStatDone = true
