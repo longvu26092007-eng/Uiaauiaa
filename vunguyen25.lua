@@ -440,17 +440,17 @@ local function GetStatValue(statName)
     return val
 end
 
--- [SỬA Ở ĐÂY] Hạ mốc kiểm tra xuống 2500 để chắc chắn không bị false nếu game cap max stats là 2550
+-- [SỬA Ở ĐÂY] Kiểm tra chuẩn mốc 2800 (Max Stats hiện hành)
 local function IsStatSwordBuild()
-    return GetStatValue("Melee") >= 2500
-       and GetStatValue("Defense") >= 2500
-       and GetStatValue("Sword") >= 2500
+    return GetStatValue("Melee") >= 2800
+       and GetStatValue("Defense") >= 2800
+       and GetStatValue("Sword") >= 2800
 end
 
 local function IsStatGunBuild()
-    return GetStatValue("Melee") >= 2500
-       and GetStatValue("Defense") >= 2500
-       and GetStatValue("Gun") >= 2500
+    return GetStatValue("Melee") >= 2800
+       and GetStatValue("Defense") >= 2800
+       and GetStatValue("Gun") >= 2800
 end
 
 -- === STAT RESET & ADD POINT ===
@@ -471,7 +471,7 @@ end
 -- [SỬA Ở ĐÂY] Nếu stats đã đúng chuẩn, bỏ qua quá trình Reset và return luôn
 local function DoStatSword()
     if IsStatSwordBuild() then 
-        warn("[Draco Hub] Stats Kiếm đã Max. Bỏ qua Reset Stats!")
+        warn("[Draco Hub] Stats Kiếm đã Max (2800). Bỏ qua Reset Stats!")
         return 
     end
     warn("[Draco Hub] Stats chưa đúng bộ Kiếm. Tiến hành Reset...")
@@ -486,7 +486,7 @@ end
 
 local function DoStatGun()
     if IsStatGunBuild() then 
-        warn("[Draco Hub] Stats Súng đã Max. Bỏ qua Reset Stats!")
+        warn("[Draco Hub] Stats Súng đã Max (2800). Bỏ qua Reset Stats!")
         return 
     end
     warn("[Draco Hub] Stats chưa đúng bộ Súng. Tiến hành Reset...")
