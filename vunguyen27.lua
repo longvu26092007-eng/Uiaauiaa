@@ -109,7 +109,7 @@ end
 -- ==========================================
 -- [ PHẦN 2 : Check Mastery Dragon Talon & Smart Kick ]
 -- ==========================================
-local ActionStatus -- gán ở Phần 3
+local ActionStatus
 
 local function GetWeaponMastery(weaponName)
     local p    = game.Players.LocalPlayer
@@ -343,10 +343,14 @@ local function ReadJson()
     return {}
 end
 
+local function WriteJson(data)
+    pcall(function() writefile(JsonFileName, HttpService:JSONEncode(data)) end)
+end
+
 local function SaveLearnStatus()
     local data = ReadJson()
     data.Status = "StatusLearnDone"
-    pcall(function() writefile(JsonFileName, HttpService:JSONEncode(data)) end)
+    WriteJson(data)
 end
 
 local function IsLearnDone()
@@ -357,7 +361,7 @@ end
 local function SaveBlackBeltFailed(bCount)
     local data = ReadJson()
     data.NotDoneBlack = bCount
-    pcall(function() writefile(JsonFileName, HttpService:JSONEncode(data)) end)
+    WriteJson(data)
 end
 
 local function GetBlackBeltFailed()
@@ -369,14 +373,19 @@ local function ClearBlackBeltFailed()
     local data = ReadJson()
     if data.NotDoneBlack then
         data.NotDoneBlack = nil
-        pcall(function() writefile(JsonFileName, HttpService:JSONEncode(data)) end)
+        WriteJson(data)
     end
 end
 
+-- ==========================================
+-- SaveDoneChangeRace / SaveDoneCraft
+-- Chỉ ghi nếu chưa có trong file, không ghi đè lại
+-- ==========================================
 local function SaveDoneChangeRace()
     local data = ReadJson()
+    if data.DoneChangeRace == true then return end  -- đã có rồi, bỏ qua
     data.DoneChangeRace = true
-    pcall(function() writefile(JsonFileName, HttpService:JSONEncode(data)) end)
+    WriteJson(data)
 end
 
 local function IsDoneChangeRace()
@@ -386,8 +395,9 @@ end
 
 local function SaveDoneCraft()
     local data = ReadJson()
+    if data.DoneCraft == true then return end  -- đã có rồi, bỏ qua
     data.DoneCraft = true
-    pcall(function() writefile(JsonFileName, HttpService:JSONEncode(data)) end)
+    WriteJson(data)
 end
 
 local function IsDoneCraft()
@@ -396,10 +406,31 @@ local function IsDoneCraft()
 end
 
 -- ==========================================
--- [ PHẦN 6 HELPERS ] RACE DETECT / STAT / EQUIP / JSON
+-- Lưu/đọc trạng thái stat build vào JSON
+-- format: { Melee=2800, Defense=2800, Sword=2800, Gun=0 }
+--      hoặc { Melee=2800, Defense=2800, Sword=0,    Gun=2800 }
+-- ==========================================
+local function SaveStatBuild(buildType)
+    -- buildType: "Sword" hoặc "Gun"
+    local data = ReadJson()
+    if buildType == "Sword" then
+        data.StatBuild = { Melee=2800, Defense=2800, Sword=2800, Gun=0 }
+    elseif buildType == "Gun" then
+        data.StatBuild = { Melee=2800, Defense=2800, Sword=0, Gun=2800 }
+    end
+    WriteJson(data)
+    warn("[DracoHub] SaveStatBuild: đã ghi build " .. buildType .. " vào JSON")
+end
+
+local function GetStatBuildFromJson()
+    local data = ReadJson()
+    return data.StatBuild  -- nil nếu chưa có
+end
+
+-- ==========================================
+-- [ PHẦN 6 HELPERS ] RACE DETECT / STAT / EQUIP
 -- ==========================================
 
--- === DETECT DRAGON RACE V1/V2/V3/V4 ===
 local function GetDragonRace()
     local raceStr = "Unknown"
     pcall(function()
@@ -426,31 +457,9 @@ local function IsDracoDetected()
     return string.find(race, "Draco") ~= nil or string.find(race, "Dragon") ~= nil
 end
 
--- === ĐỌC STAT HIỆN TẠI TỪ Player.Data ===
-local function GetStatValue(statName)
-    local val = 0
-    pcall(function()
-        local d = Player:FindFirstChild("Data")
-        if d and d:FindFirstChild(statName) then
-            val = d[statName].Value
-        end
-    end)
-    return val
-end
-
-local function IsStatSwordBuild()
-    return GetStatValue("Melee") >= 2800
-       and GetStatValue("Defense") >= 2800
-       and GetStatValue("Sword") >= 2800
-end
-
-local function IsStatGunBuild()
-    return GetStatValue("Melee") >= 2800
-       and GetStatValue("Defense") >= 2800
-       and GetStatValue("Gun") >= 2800
-end
-
--- === STAT RESET & ADD POINT ===
+-- ==========================================
+-- STAT RESET & ADD POINT
+-- ==========================================
 local function ResetStat()
     local CommF = game:GetService("ReplicatedStorage").Remotes.CommF_
     pcall(function() CommF:InvokeServer("BlackbeardReward", "Refund", "1") end)
@@ -466,49 +475,78 @@ local function AddStatPoint(statName, amount)
 end
 
 -- ==========================================
--- [ĐÃ SỬA] DoStatSword: chỉ reset khi Sword CHƯA đủ 2800
--- Nếu đang farm Sword Mastery mà Sword đã 2800 → KHÔNG reset
+-- DoStatForMastery
+-- Nhận vào loại weapon đang farm mastery: "Heart"(Sword) hoặc "Storm"(Gun)
+-- Logic:
+--   1. Check mastery weapon kia xem đã xong chưa
+--   2. Đọc file json xem build hiện tại là gì
+--   3. Nếu build trong json đúng với yêu cầu → KHÔNG reset
+--   4. Nếu build sai hoặc chưa có → reset & add & ghi json
 -- ==========================================
-local function DoStatSword()
-    -- Nếu đã đúng build Sword rồi thì bỏ qua, không làm gì cả
-    if GetStatValue("Sword") >= 2800
-       and GetStatValue("Melee") >= 2800
-       and GetStatValue("Defense") >= 2800 then
-        warn("[DracoHub] DoStatSword: Đã đủ Sword build, bỏ qua reset!")
-        return
-    end
-    -- Chưa đủ → reset rồi add lại
-    warn("[DracoHub] DoStatSword: Chưa đủ build, tiến hành reset & add stats...")
-    ResetStat()
-    task.wait(0.5)
-    AddStatPoint("Melee",   2800)
-    task.wait(0.3)
-    AddStatPoint("Defense", 2800)
-    task.wait(0.3)
-    AddStatPoint("Sword",   2800)
-end
+local function DoStatForMastery(farmType)
+    -- farmType = "Heart" → cần Sword build
+    -- farmType = "Storm" → cần Gun build
+    local heartMastery = GetWeaponMastery("Dragonheart")
+    local stormMastery = GetWeaponMastery("Dragonstorm")
 
--- ==========================================
--- [ĐÃ SỬA] DoStatGun: chỉ reset khi Gun CHƯA đủ 2800
--- Nếu đang farm Gun Mastery mà Gun đã 2800 → KHÔNG reset
--- ==========================================
-local function DoStatGun()
-    -- Nếu đã đúng build Gun rồi thì bỏ qua, không làm gì cả
-    if GetStatValue("Gun") >= 2800
-       and GetStatValue("Melee") >= 2800
-       and GetStatValue("Defense") >= 2800 then
-        warn("[DracoHub] DoStatGun: Đã đủ Gun build, bỏ qua reset!")
-        return
+    local needBuild   -- build cần thiết: "Sword" hoặc "Gun"
+    local skipStat    -- tên stat không cần đổi (đã farm xong)
+
+    if farmType == "Heart" then
+        -- Đang farm Heart mastery → cần Sword build
+        needBuild = "Sword"
+    elseif farmType == "Storm" then
+        -- Đang farm Storm mastery → cần Gun build
+        -- Nhưng nếu Heart chưa xong thì vẫn là Sword build
+        if heartMastery < 500 then
+            needBuild = "Sword"
+        else
+            needBuild = "Gun"
+        end
     end
-    -- Chưa đủ → reset rồi add lại
-    warn("[DracoHub] DoStatGun: Chưa đủ build, tiến hành reset & add stats...")
+
+    warn("[DracoHub] DoStatForMastery → farmType=" .. farmType .. " needBuild=" .. needBuild
+        .. " HeartMastery=" .. heartMastery .. " StormMastery=" .. stormMastery)
+
+    -- Đọc build hiện tại từ JSON
+    local jsonBuild = GetStatBuildFromJson()
+
+    if jsonBuild then
+        -- Kiểm tra build trong JSON có khớp với cần không
+        if needBuild == "Sword" then
+            if (jsonBuild.Sword or 0) >= 2800
+            and (jsonBuild.Melee or 0) >= 2800
+            and (jsonBuild.Defense or 0) >= 2800 then
+                warn("[DracoHub] DoStatForMastery: JSON ghi Sword build đúng rồi, BỎ QUA reset!")
+                return
+            end
+        elseif needBuild == "Gun" then
+            if (jsonBuild.Gun or 0) >= 2800
+            and (jsonBuild.Melee or 0) >= 2800
+            and (jsonBuild.Defense or 0) >= 2800 then
+                warn("[DracoHub] DoStatForMastery: JSON ghi Gun build đúng rồi, BỎ QUA reset!")
+                return
+            end
+        end
+    end
+
+    -- Build sai hoặc chưa có → reset & add
+    warn("[DracoHub] DoStatForMastery: Cần đổi sang " .. needBuild .. " build, tiến hành reset...")
     ResetStat()
     task.wait(0.5)
     AddStatPoint("Melee",   2800)
     task.wait(0.3)
     AddStatPoint("Defense", 2800)
     task.wait(0.3)
-    AddStatPoint("Gun",     2800)
+    if needBuild == "Sword" then
+        AddStatPoint("Sword", 2800)
+        task.wait(0.3)
+        SaveStatBuild("Sword")
+    elseif needBuild == "Gun" then
+        AddStatPoint("Gun", 2800)
+        task.wait(0.3)
+        SaveStatBuild("Gun")
+    end
 end
 
 -- === EQUIP WEAPON ===
@@ -717,7 +755,6 @@ task.spawn(function()
     while task.wait(4) do
         local currentMastery = GetWeaponMastery("Dragon Talon")
 
-        -- ===== PHASE 1: Farm Dragon Talon Mastery =====
         if currentMastery < 500 then
             if CURRENT_STATE ~= "FARM_BONE" then
                 CURRENT_STATE = "FARM_BONE"
@@ -739,26 +776,22 @@ task.spawn(function()
                 local _, boneCount = CheckItemInInv(inv, "Dinosaur Bones")
                 local _, eggCount  = CheckItemInInv(inv, "Dragon Egg")
 
-                -- SMART KICK: Nhận Belt/Bones mới
                 if hasRed   and not startRed   then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Red Belt."); break end
                 if hasBlack and not startBlack then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Black Belt."); break end
                 if hasRed and boneCount >= 3 and startBones < 3 then
                     task.wait(1); Player:Kick("\n[ Draco Hub ]\nĐủ 3 Dinosaur Bones."); break
                 end
 
-                -- ===== ĐIỀU HƯỚNG THEO BELT =====
                 if hasBlack then
                     ClearBlackBeltFailed()
 
                     if IsLearnDone() then
-                        -- ==========================================
-                        -- [ PHẦN 6 ] SAU KHI HỌC TETHER XONG
-                        -- ==========================================
                         local doneRaceJson  = IsDoneChangeRace()
                         local doneCraftJson = IsDoneCraft()
                         local hasHeart      = CheckHasWeapon("Dragonheart")
                         local hasStorm      = CheckHasWeapon("Dragonstorm")
 
+                        -- Chỉ ghi nếu chưa có (hàm SaveDoneCraft/SaveDoneChangeRace tự kiểm tra)
                         if hasHeart and hasStorm and not doneCraftJson then
                             SaveDoneCraft()
                             doneCraftJson = true
@@ -788,30 +821,42 @@ task.spawn(function()
                                 CURRENT_STATE = "PHASE6_DONE"
                             end
 
+                            -- ==========================================
+                            -- FARM HEART MASTERY (Dragonheart - Sword)
+                            -- ==========================================
                             if heartMastery < 500 then
                                 if CURRENT_STATE ~= "FARM_HEART_MASTERY" then
                                     CURRENT_STATE = "FARM_HEART_MASTERY"
-                                    heartStatDone = false
                                 end
                                 if not heartStatDone then
+                                    -- Equip cả 2 weapon trước
                                     EquipWeapon("Dragonheart")
-                                    task.wait(1)
-                                    DoStatSword()  -- Sẽ KHÔNG reset nếu Sword đã 2800
+                                    task.wait(0.5)
+                                    EquipWeapon("Dragonstorm")
+                                    task.wait(0.5)
+                                    -- Check & set stat dựa trên mastery
+                                    DoStatForMastery("Heart")
                                     task.wait(1)
                                     heartStatDone = true
                                     LoadBananaHub("HeartMastery")
                                 end
                                 ActionStatus.Text = "Hành động: [P6] Farm Dragonheart Mastery (" .. heartMastery .. "/500)..."
 
+                            -- ==========================================
+                            -- FARM STORM MASTERY (Dragonstorm - Gun)
+                            -- ==========================================
                             elseif stormMastery < 500 then
                                 if CURRENT_STATE ~= "FARM_STORM_MASTERY" then
                                     CURRENT_STATE = "FARM_STORM_MASTERY"
-                                    stormStatDone = false
                                 end
                                 if not stormStatDone then
+                                    -- Equip cả 2 weapon trước
                                     EquipWeapon("Dragonstorm")
-                                    task.wait(1)
-                                    DoStatGun()  -- Sẽ KHÔNG reset nếu Gun đã 2800
+                                    task.wait(0.5)
+                                    EquipWeapon("Dragonheart")
+                                    task.wait(0.5)
+                                    -- Check & set stat dựa trên mastery
+                                    DoStatForMastery("Storm")
                                     task.wait(1)
                                     stormStatDone = true
                                     LoadBananaHub("StormMastery")
@@ -926,7 +971,6 @@ task.spawn(function()
                         end
 
                     else
-                        -- ===== HỌC TETHER =====
                         if boneCount >= 3 then
                             CURRENT_STATE = "LEARN_TETHER"
                             ActionStatus.Text = "Hành động: Đủ Belt & Bone! Bay đến NPC..."
@@ -966,14 +1010,13 @@ task.spawn(function()
                     end
 
                 else
-                    -- Chưa có Black Belt → farm Dojo
                     if CURRENT_STATE ~= "FARM_DOJO_EARLY" then
                         CURRENT_STATE = "FARM_DOJO_EARLY"
                         LoadBananaHub("Dojo")
                     end
                     ActionStatus.Text = "Hành động: Đang cày Belt tại Dojo..."
                 end
-            end -- end if invValid
+            end
         end
-    end -- end while
+    end
 end)
