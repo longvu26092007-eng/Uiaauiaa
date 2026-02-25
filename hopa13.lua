@@ -10,8 +10,8 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService") -- Thêm Service kiểm tra Tab
 
 local LocalPlayer = Players.LocalPlayer
-local targetCountMin = 2
-local targetCountMax = 5
+local targetCountMin = 1
+local targetCountMax = 2
 local targetRegion = "United States"
 local isHopping = false
 local startTime = tick() -- Bộ đếm thời gian cho Module Fallback
