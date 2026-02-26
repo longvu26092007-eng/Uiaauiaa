@@ -3,6 +3,13 @@
 -- ==========================================
 getgenv().Team = getgenv().Team or "Marines"
 
+-- ==========================================
+-- [ TOGGLE FARM FRAGMENT ]
+-- true  = bật farm fragment khi thiếu
+-- false = bỏ qua, không farm fragment
+-- ==========================================
+getgenv().fragment = getgenv().fragment ~= false and true or false
+
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
@@ -49,7 +56,7 @@ local Trade_CFrame  = CFrame.new(-12596.668, 336.671, -7556.832)
 local Wizard_CFrame = CFrame.new(5773.936035, 1209.442871, 809.224548)
 local Craft_CFrame  = CFrame.new(5864.833008, 1209.483032, 811.329224)
 
-local FRAGMENT_MIN = 12000  -- Ngưỡng fragment tối thiểu
+local FRAGMENT_MIN = 12000
 
 local function GetFragments()
     local val = 0
@@ -157,7 +164,6 @@ end
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
 ScreenGui.Name = "DracoHubUI"
 
--- Tăng chiều cao frame để chứa thêm dòng Fragment
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size             = UDim2.new(0, 450, 0, 185)
 MainFrame.Position         = UDim2.new(0.5, -225, 0.5, -92)
@@ -240,7 +246,6 @@ MasteryLabel.BackgroundTransparency = 1
 MasteryLabel.TextSize           = 13
 MasteryLabel.TextXAlignment     = Enum.TextXAlignment.Left
 
--- [ MỚI ] Label Fragment ngay dưới Mastery
 local FragmentLabel = Instance.new("TextLabel", InfoPanel)
 FragmentLabel.Size               = UDim2.new(1, 0, 0, 25)
 FragmentLabel.Position           = UDim2.new(0, 0, 0, 75)
@@ -281,15 +286,21 @@ task.spawn(function()
     end
 end)
 
--- [ MỚI ] Loop cập nhật Fragment label liên tục
+-- Loop cập nhật Fragment label + trạng thái toggle
 task.spawn(function()
     while true do
-        local frag = GetFragments()
-        FragmentLabel.Text = "Fragment: " .. frag .. " / " .. FRAGMENT_MIN
-        if frag >= FRAGMENT_MIN then
-            FragmentLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+        local frag     = GetFragments()
+        local toggleOn = getgenv().fragment == true
+        if not toggleOn then
+            FragmentLabel.Text       = "Fragment: " .. frag .. " [Farm: TẮT]"
+            FragmentLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
         else
-            FragmentLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+            FragmentLabel.Text = "Fragment: " .. frag .. " / " .. FRAGMENT_MIN .. " [Farm: BẬT]"
+            if frag >= FRAGMENT_MIN then
+                FragmentLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+            else
+                FragmentLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+            end
         end
         task.wait(2)
     end
@@ -707,7 +718,6 @@ local function LoadBananaHub(typeStr)
                 ["Start Farm"]                 = true,
             }
         elseif typeStr == "FarmFragment" then
-            -- [ PHẦN 1.1 ] Farm Katakuri để lấy Fragment
             hubKey = "1f34f32b6f1917a66d57e8c6"
             getgenv().Config = {
                 ["Select Method Farm"] = "Farm Katakuri",
@@ -765,31 +775,42 @@ task.spawn(function()
     while task.wait(4) do
 
         -- ==========================================
-        -- [ PHẦN 1.1 ] KIỂM TRA FRAGMENT TRƯỚC TIÊN
-        -- Nếu fragment < 12000 → farm Katakuri, chặn mọi phase khác
+        -- [ KIỂM TRA FRAGMENT ]
+        -- getgenv().fragment = true  → farm khi thiếu
+        -- getgenv().fragment = false → bỏ qua hoàn toàn
+        -- Bật/tắt từ executor bất kỳ lúc nào:
+        --   getgenv().fragment = true
+        --   getgenv().fragment = false
         -- ==========================================
-        local currentFrag = GetFragments()
-        if currentFrag < FRAGMENT_MIN then
-            if CURRENT_STATE ~= "FARM_FRAGMENT" then
-                CURRENT_STATE = "FARM_FRAGMENT"
-                LoadBananaHub("FarmFragment")
+        if getgenv().fragment == true then
+            local currentFrag = GetFragments()
+            if currentFrag < FRAGMENT_MIN then
+                if CURRENT_STATE ~= "FARM_FRAGMENT" then
+                    CURRENT_STATE = "FARM_FRAGMENT"
+                    LoadBananaHub("FarmFragment")
+                end
+                ActionStatus.Text = "Hành động: [Fragment] Đang farm Fragment (" .. currentFrag .. "/" .. FRAGMENT_MIN .. ")..."
+                continue
+            else
+                if CURRENT_STATE == "FARM_FRAGMENT" then
+                    CURRENT_STATE    = "UNKNOWN"
+                    _G.HubLoadedType = "None"
+                    ActionStatus.Text = "Hành động: Fragment đủ rồi! Tiếp tục kịch bản..."
+                    task.wait(2)
+                end
             end
-            ActionStatus.Text = "Hành động: [Fragment] Đang farm Fragment (" .. currentFrag .. "/" .. FRAGMENT_MIN .. ")..."
-            continue  -- bỏ qua toàn bộ logic bên dưới, đợi vòng lặp tiếp theo
-        end
-
-        -- Fragment đã đủ → chạy các phase theo tuần tự bình thường
-        -- Nếu vừa thoát khỏi FARM_FRAGMENT thì reset state để tiếp tục đúng phase
-        if CURRENT_STATE == "FARM_FRAGMENT" then
-            CURRENT_STATE = "UNKNOWN"
-            _G.HubLoadedType = "None"  -- cho phép load lại hub đúng loại
-            ActionStatus.Text = "Hành động: Fragment đủ rồi! Tiếp tục kịch bản..."
-            task.wait(2)
+        else
+            -- Toggle vừa tắt giữa chừng → dừng farm fragment, tiếp tục phase khác
+            if CURRENT_STATE == "FARM_FRAGMENT" then
+                CURRENT_STATE    = "UNKNOWN"
+                _G.HubLoadedType = "None"
+                ActionStatus.Text = "Hành động: Farm Fragment đã TẮT, tiếp tục kịch bản..."
+                task.wait(1)
+            end
         end
 
         local currentMastery = GetWeaponMastery("Dragon Talon")
 
-        -- ===== PHASE 1: Farm Dragon Talon Mastery =====
         if currentMastery < 500 then
             if CURRENT_STATE ~= "FARM_BONE" then
                 CURRENT_STATE = "FARM_BONE"
