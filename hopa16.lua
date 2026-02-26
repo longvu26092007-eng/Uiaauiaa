@@ -12,7 +12,7 @@ local UserInputService = game:GetService("UserInputService") -- Thêm Service ki
 local LocalPlayer = Players.LocalPlayer
 local targetCountMin = 1
 local targetCountMax = 4
-local targetRegion = "United States"
+local targetRegion = "Singapore"
 local isHopping = false
 local startTime = tick() -- Bộ đếm thời gian cho Module Fallback
 
