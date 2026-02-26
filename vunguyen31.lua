@@ -508,6 +508,9 @@ local function AddStatPoint(statName, amount)
     end)
 end
 
+-- ==========================================
+-- [ DoStatForMastery ] - CÓ DELAY 15S & KIỂM TRA LẠI JSON
+-- ==========================================
 local function DoStatForMastery(farmType)
     local heartMastery = GetWeaponMastery("Dragonheart")
     local stormMastery = GetWeaponMastery("Dragonstorm")
@@ -526,27 +529,53 @@ local function DoStatForMastery(farmType)
     warn("[DracoHub] DoStatForMastery → farmType=" .. farmType .. " needBuild=" .. needBuild
         .. " HeartMastery=" .. heartMastery .. " StormMastery=" .. stormMastery)
 
-    local jsonBuild = GetStatBuildFromJson()
-
-    if jsonBuild then
+    -- Hàm nội bộ: kiểm tra JSON có đúng build cần không
+    local function IsJsonBuildCorrect()
+        local jsonBuild = GetStatBuildFromJson()
+        if not jsonBuild then return false end
         if needBuild == "Sword" then
-            if (jsonBuild.Sword or 0) >= 2800
-            and (jsonBuild.Melee or 0) >= 2800
-            and (jsonBuild.Defense or 0) >= 2800 then
-                warn("[DracoHub] DoStatForMastery: JSON ghi Sword build đúng rồi, BỎ QUA reset!")
-                return
-            end
+            return (jsonBuild.Sword   or 0) >= 2800
+               and (jsonBuild.Melee   or 0) >= 2800
+               and (jsonBuild.Defense or 0) >= 2800
         elseif needBuild == "Gun" then
-            if (jsonBuild.Gun or 0) >= 2800
-            and (jsonBuild.Melee or 0) >= 2800
-            and (jsonBuild.Defense or 0) >= 2800 then
-                warn("[DracoHub] DoStatForMastery: JSON ghi Gun build đúng rồi, BỎ QUA reset!")
-                return
-            end
+            return (jsonBuild.Gun     or 0) >= 2800
+               and (jsonBuild.Melee   or 0) >= 2800
+               and (jsonBuild.Defense or 0) >= 2800
         end
+        return false
     end
 
-    warn("[DracoHub] DoStatForMastery: Cần đổi sang " .. needBuild .. " build, tiến hành reset...")
+    -- BƯỚC 1: Kiểm tra JSON ngay lập tức lần đầu
+    if IsJsonBuildCorrect() then
+        warn("[DracoHub] DoStatForMastery: JSON đã đúng build " .. needBuild .. " → BỎ QUA ngay!")
+        return
+    end
+
+    -- BƯỚC 2: JSON chưa đúng → đếm ngược 15 giây trên UI rồi kiểm tra lại
+    warn("[DracoHub] DoStatForMastery: JSON chưa đúng build " .. needBuild .. " → Chờ 15 giây rồi kiểm tra lại...")
+    for i = 15, 1, -1 do
+        if ActionStatus then
+            ActionStatus.Text = "Hành động: [Stats] Chuẩn bị đổi sang "
+                .. needBuild .. " build, kiểm tra lại sau " .. i .. "s..."
+        end
+        task.wait(1)
+    end
+
+    -- BƯỚC 3: Kiểm tra lại JSON sau khi delay xong
+    if IsJsonBuildCorrect() then
+        warn("[DracoHub] DoStatForMastery: Sau 15s → JSON đúng build " .. needBuild .. " rồi → BỎ QUA reset!")
+        if ActionStatus then
+            ActionStatus.Text = "Hành động: [Stats] Xác nhận build " .. needBuild .. " đúng, bỏ qua reset!"
+        end
+        return
+    end
+
+    -- BƯỚC 4: Vẫn sai → tiến hành reset và phân bổ điểm
+    warn("[DracoHub] DoStatForMastery: Xác nhận sai build → Tiến hành reset sang " .. needBuild .. "...")
+    if ActionStatus then
+        ActionStatus.Text = "Hành động: [Stats] Đang reset và phân bổ điểm " .. needBuild .. " build..."
+    end
+
     ResetStat()
     task.wait(0.5)
     AddStatPoint("Melee",   2800)
@@ -557,10 +586,16 @@ local function DoStatForMastery(farmType)
         AddStatPoint("Sword", 2800)
         task.wait(0.3)
         SaveStatBuild("Sword")
+        warn("[DracoHub] DoStatForMastery: Xong → Sword build, đã ghi JSON!")
     elseif needBuild == "Gun" then
         AddStatPoint("Gun", 2800)
         task.wait(0.3)
         SaveStatBuild("Gun")
+        warn("[DracoHub] DoStatForMastery: Xong → Gun build, đã ghi JSON!")
+    end
+
+    if ActionStatus then
+        ActionStatus.Text = "Hành động: [Stats] Hoàn tất phân bổ điểm " .. needBuild .. " build!"
     end
 end
 
