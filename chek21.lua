@@ -139,7 +139,7 @@ local function DestructScript()
     Status.TextColor3 = Color3.new(0, 1, 0)
     if PlayerAddedConnection then PlayerAddedConnection:Disconnect() end
 
-    task.wait(2)
+    task.wait(1)
     if ScreenGui then ScreenGui:Destroy() end
 end
 
@@ -152,7 +152,7 @@ end)
 
 -- 8. LUỒNG TỰ ĐỘNG QUÉT CHÍNH
 task.spawn(function()
-    task.wait(5)
+    task.wait(1)
 
     for i = 1, 3 do
         if isHopping then break end
