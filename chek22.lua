@@ -73,7 +73,7 @@ for _, name in ipairs(RawBlacklist) do
 end
 
 -- 2. LINK SCRIPT SERVER HOP
-local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa15.lua"
+local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa16.lua"
 
 -- 3. GIAO DIỆN THÔNG BÁO
 local SafeGuiParent = pcall(function() return gethui() end) and gethui()
