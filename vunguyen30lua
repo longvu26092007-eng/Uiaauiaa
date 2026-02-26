@@ -868,11 +868,17 @@ task.spawn(function()
                                 Player:Kick("\n[ Draco Hub ]\nDragonheart đạt 500 Mastery! Rejoin để farm Storm.")
                                 break
                             end
+
+                            -- Ghi file Completed-mastery ngay khi Storm đủ 500
+                            -- Không phụ thuộc vào CURRENT_STATE, chỉ cần stormMastery >= 500
+                            -- và change1 = true, chưa ghi lần nào
+                            if stormMastery >= 500 and getgenv().change1 == true and not masteryFileCreated then
+                                pcall(function() writefile(Player.Name .. ".txt", "Completed-mastery") end)
+                                masteryFileCreated = true
+                                warn("[DracoHub] Đã ghi file " .. Player.Name .. ".txt → Completed-mastery")
+                            end
+
                             if CURRENT_STATE == "FARM_STORM_MASTERY" and stormMastery >= 500 then
-                                if getgenv().change1 == true and not masteryFileCreated then
-                                    pcall(function() writefile(Player.Name .. ".txt", "Completed-mastery") end)
-                                    masteryFileCreated = true
-                                end
                                 CURRENT_STATE = "PHASE6_DONE"
                             end
 
