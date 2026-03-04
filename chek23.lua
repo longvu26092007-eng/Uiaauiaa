@@ -14,7 +14,6 @@ local LocalPlayer         = Players.LocalPlayer
 
 -- ==========================================
 -- [ PHẦN 0 ] AUTO CHỌN TEAM
--- (Copy y chang từ DracoHub_v4 / autobuydraco.txt)
 -- ==========================================
 getgenv().Team = getgenv().Team or "Marines"
 
@@ -25,8 +24,8 @@ if LocalPlayer.Team == nil then
             if string.find(v.Name, "Main") then
                 pcall(function()
                     local teamBtn = v.ChooseTeam.Container[getgenv().Team].Frame.TextButton
-                    teamBtn.Size                   = UDim2.new(0, 10000, 0, 10000)
-                    teamBtn.Position               = UDim2.new(-4, 0, -5, 0)
+                    teamBtn.Size                    = UDim2.new(0, 10000, 0, 10000)
+                    teamBtn.Position                = UDim2.new(-4, 0, -5, 0)
                     teamBtn.BackgroundTransparency = 1
                     task.wait(0.5)
                     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true,  game, 1)
@@ -44,38 +43,53 @@ repeat task.wait() until LocalPlayer.Character
     and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 
 -- ==========================================
--- [ PHẦN 1 ] ANTI-STALKER LOGIC
+-- [ PHẦN 1 ] ANTI-STALKER LOGIC (UPDATED BLACKLIST)
 -- ==========================================
 
--- 1. DANH SÁCH ĐEN CỦA VŨ (Giữ nguyên dạng mảng để dễ dán thêm)
 local RawBlacklist = {
-    "AshleeCrawford426", "EmilyHazel62", "JasminAyers92717", "JohnnyHuynh857",
-    "SherryCarroll491", "MadelinePatton378", "AzaleaSchmidt2", "StacyMagnolia55519",
-    "LatashaBarber882", "PennyWade86503", "MackenzieSchultz1", "LindseyRosales1",
-    "KathrynCampos6603", "MadisonGiles6618", "AlisonMerritt2541", "RoseMcfarland5",
-    "MariahBradford76", "KristinOdom58", "NatalieWalsh8016", "LarryKeller10",
-    "CarlyFleming4785", "ErinConway6863", "ErnestDodson109", "CalvinZamora5428",
-    "SheliaFischer9521", "KittyGriffin7", "CharleneNoble22", "DouglasDonovan91604",
-    "GreggDouglas79", "RyanHood7937", "KristineSandoval2220", "VickiMccann4399",
-    "ChristinaRose427", "BearBurgundy0", "JeanKennedy4884", "NormanArmstrong530",
-    "BreannaHall14690", "CarlyBoyle84375", "MarissaKaufman458", "JoyceShelton894",
-    "JudyBeasley33420", "TammyNorton2457", "AlexanderDavis34598", "CarlaAdams13",
-    "RebekahHensley9575", "AlexaGriffin784", "TristanFerguson4782", "BrittanyEvans8272",
-    "RubenPark74529", "CindyPeterson4830", "RuthCooke4072", "JessicaHenry1315",
-    "JamieKline4935", "ZoeCarter3307", "DaisyPitts52703", "MackenziePalmer6",
-    "JaimePastel16", "AmberMalone203"
+    "PaulaKane069", "ErnestJohns365", "JeremyKrause92419", "ChristieBlevins438",
+    "XxCrystalNovaxX2013", "GregLane01813", "JaneJensen03", "DustinErickson962",
+    "PaulaIbarra0604", "IsaiahVaughan99557", "AlexisDaniels69808", "KerryMcgee15",
+    "RobertoHunter95", "AngelSalas74", "ChristianPonce657", "DennisSpencer8740",
+    "CarolynBautista90", "KatelynMorrow88395", "ErnestShort7", "StanleyRose6739",
+    "ShaunRust553", "ShelleyAdams308", "AndreaKemp5267", "CarlosBurnett4",
+    "AlexandraMendoza7715", "GregNolan3", "CynthiaHines66528", "KathyMadden9534",
+    "SaraVivid390", "CrystalPineda84794", "LaceyTapia4532", "LoriSavage51917",
+    "ErnestMora42548", "ClintonBarry3", "KeithSavage0", "ShaunCarr70426",
+    "KarenCooley5210", "KevinCyan62812", "ShaunMaynard70", "PennyAquamarine72",
+    "GlenAustin3", "BrandonKramer955", "PhilipTapia85", "SoniaBarron24",
+    "JoseWebb3599", "ColinFreeman43866", "ColtonMcfarland0114", "IvanRubio1279",
+    "MalikMack43", "TomRussell998", "ChristianSpencer5722", "KathleenSaffron1772",
+    "JodiHardy365", "PrestonDaniels47209", "PamTrevino03169", "KrystalGaines4",
+    "ElaineMullen6258", "KaitlinBass3418", "AustinLong276", "TonySheppard2348",
+    "ErnestMcpherson01", "DuaneJuarez36", "LeahButler425", "XxMaxMagicUltraxX",
+    "RonaldHinton067", "TimReyes7834", "AlyssaWaters662", "KatrinaHouston870",
+    "DebbieGould36348", "BruceRangel92689", "StacieCervantes1476", "ChrisOconnor35",
+    "LeroyChang842", "AngelicaHarding380", "KatelynRice39", "YolandaMcclain10",
+    "ShelbySapphire38549", "ForestJames854", "JeromeBoyd00377", "MeghanDouglas1",
+    "StaceyBlue5240", "MarthaParrish502", "JulianTurbo270", "AlexanderOrtiz12686",
+    "TiffanyRobinson71690", "SPARKLY_Claw70", "L3viMaxAqua", "JaydenC0deEagle99",
+    "Wraith_BLAZE200412", "Layla_Stealth200447", "KyleBanks01", "SparkNova65",
+    "XxVict0riaFirexX2005", "Galaxy_RIFT200784", "Paisl3yNovaNight", "Master_ACE201245",
+    "SebastianJadexit", "WOLFSKYFROST_YT", "Knight_Infern059", "ZeroCircuit201821",
+    "ArrowFox200453", "XxFusi0nBaneBac0nxXY", "XxAsher_NOVAXX2003", "Jax0nTiger201412",
+    "OliverQueenBlade2008", "Victoria_Circuit32", "Crystal_Dark30", "Prism_Aqua2017YT",
+    "P0werMysticV0rtex", "N0ahBac0nPh0enix", "ZapN0vaC0d3", "Ven0mStarStarry",
+    "William_Storm200422", "Z0e_W0LF2013", "HenryHunterdri", "RiderStormDawn2015",
+    "CrazeSpark201462", "XxAriaByteBuilderxX2", "GoldenStealthAqua200",
+    "LuckyUltraTurbo20031", "NinjaAceTurbo2024", "Ethan_Ghost97", "HazelDancerjqx",
+    "EvelynZoomShadowYT", "PixelChaseS0nic2017", "LeviBaneNinja93", "XxLavaCyberEpicxX",
+    "HazeBearChill2004", "MelissaForestrdi", "MeganGalaxy527", "XxVenomAceArrowxX202",
+    "Harp3rPr098", "XxCrystalEch0xX29"
 }
 
--- [TỐI ƯU HÓA]: Chuyển Mảng thành Bảng Băm để tra cứu O(1)
 local BlacklistMap = {}
 for _, name in ipairs(RawBlacklist) do
     BlacklistMap[name] = true
 end
 
--- 2. LINK SCRIPT SERVER HOP
 local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa16.lua"
 
--- 3. GIAO DIỆN THÔNG BÁO
 local SafeGuiParent = pcall(function() return gethui() end) and gethui()
     or CoreGui:FindFirstChild("RobloxGui") or CoreGui
 if SafeGuiParent:FindFirstChild("AntiStalkerUI") then
@@ -104,24 +118,18 @@ Status.TextSize               = 11
 local PlayerAddedConnection
 local isHopping = false
 
--- 4. HÀM THỰC THI HOP
 local function DoHop(detectedName)
     if isHopping then return end
     isHopping = true
-
     if PlayerAddedConnection then PlayerAddedConnection:Disconnect() end
-
     Status.Text       = "🚨 PHÁT HIỆN: " .. detectedName
     Status.TextColor3 = Color3.new(1, 0, 0)
-    warn("🚨 BLACKLIST DETECTED: " .. detectedName .. "! Đang hop...")
-
     task.wait(0.5)
     pcall(function()
         loadstring(game:HttpGet(HopScriptURL))()
     end)
 end
 
--- 5. HÀM QUÉT
 local function CheckPlayers()
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and BlacklistMap[p.Name] then
@@ -131,42 +139,32 @@ local function CheckPlayers()
     return nil
 end
 
--- 6. HÀM HỦY SCRIPT
 local function DestructScript()
     if isHopping then return end
-
     Status.Text       = "✅ An toàn! Tự hủy script..."
     Status.TextColor3 = Color3.new(0, 1, 0)
     if PlayerAddedConnection then PlayerAddedConnection:Disconnect() end
-
     task.wait(1)
     if ScreenGui then ScreenGui:Destroy() end
 end
 
--- 7. THEO DÕI PLAYER MỚI JOIN
 PlayerAddedConnection = Players.PlayerAdded:Connect(function(p)
     if p ~= LocalPlayer and BlacklistMap[p.Name] then
         DoHop(p.Name)
     end
 end)
 
--- 8. LUỒNG TỰ ĐỘNG QUÉT CHÍNH
 task.spawn(function()
     task.wait(1)
-
     for i = 1, 3 do
         if isHopping then break end
-
         Status.Text = "🔍 Quét Lần " .. i .. "/3..."
         local detected = CheckPlayers()
-
         if detected then
             DoHop(detected)
             return
         end
-
         if i < 3 then task.wait(5) end
     end
-
     DestructScript()
 end)
