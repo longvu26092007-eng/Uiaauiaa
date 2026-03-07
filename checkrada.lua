@@ -88,7 +88,7 @@ for _, name in ipairs(RawBlacklist) do
     BlacklistMap[name] = true
 end
 
-local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopa16.lua"
+local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopsever.lua"
 
 local SafeGuiParent = pcall(function() return gethui() end) and gethui()
     or CoreGui:FindFirstChild("RobloxGui") or CoreGui
