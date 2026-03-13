@@ -43,44 +43,25 @@ repeat task.wait() until LocalPlayer.Character
     and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 
 -- ==========================================
--- [ PHẦN 1 ] ANTI-STALKER LOGIC (UPDATED BLACKLIST)
+-- [ PHẦN 1 ] ANTI-STALKER LOGIC (UPDATED NEW BLACKLIST)
 -- ==========================================
 
 local RawBlacklist = {
-    "PaulaKane069", "ErnestJohns365", "JeremyKrause92419", "ChristieBlevins438",
-    "XxCrystalNovaxX2013", "GregLane01813", "JaneJensen03", "DustinErickson962",
-    "PaulaIbarra0604", "IsaiahVaughan99557", "AlexisDaniels69808", "KerryMcgee15",
-    "RobertoHunter95", "AngelSalas74", "ChristianPonce657", "DennisSpencer8740",
-    "CarolynBautista90", "KatelynMorrow88395", "ErnestShort7", "StanleyRose6739",
-    "ShaunRust553", "ShelleyAdams308", "AndreaKemp5267", "CarlosBurnett4",
-    "AlexandraMendoza7715", "GregNolan3", "CynthiaHines66528", "KathyMadden9534",
-    "SaraVivid390", "CrystalPineda84794", "LaceyTapia4532", "LoriSavage51917",
-    "ErnestMora42548", "ClintonBarry3", "KeithSavage0", "ShaunCarr70426",
-    "KarenCooley5210", "KevinCyan62812", "ShaunMaynard70", "PennyAquamarine72",
-    "GlenAustin3", "BrandonKramer955", "PhilipTapia85", "SoniaBarron24",
-    "JoseWebb3599", "ColinFreeman43866", "ColtonMcfarland0114", "IvanRubio1279",
-    "MalikMack43", "TomRussell998", "ChristianSpencer5722", "KathleenSaffron1772",
-    "JodiHardy365", "PrestonDaniels47209", "PamTrevino03169", "KrystalGaines4",
-    "ElaineMullen6258", "KaitlinBass3418", "AustinLong276", "TonySheppard2348",
-    "ErnestMcpherson01", "DuaneJuarez36", "LeahButler425", "XxMaxMagicUltraxX",
-    "RonaldHinton067", "TimReyes7834", "AlyssaWaters662", "KatrinaHouston870",
-    "DebbieGould36348", "BruceRangel92689", "StacieCervantes1476", "ChrisOconnor35",
-    "LeroyChang842", "AngelicaHarding380", "KatelynRice39", "YolandaMcclain10",
-    "ShelbySapphire38549", "ForestJames854", "JeromeBoyd00377", "MeghanDouglas1",
-    "StaceyBlue5240", "MarthaParrish502", "JulianTurbo270", "AlexanderOrtiz12686",
-    "TiffanyRobinson71690", "SPARKLY_Claw70", "L3viMaxAqua", "JaydenC0deEagle99",
-    "Wraith_BLAZE200412", "Layla_Stealth200447", "KyleBanks01", "SparkNova65",
-    "XxVict0riaFirexX2005", "Galaxy_RIFT200784", "Paisl3yNovaNight", "Master_ACE201245",
-    "SebastianJadexit", "WOLFSKYFROST_YT", "Knight_Infern059", "ZeroCircuit201821",
-    "ArrowFox200453", "XxFusi0nBaneBac0nxXY", "XxAsher_NOVAXX2003", "Jax0nTiger201412",
-    "OliverQueenBlade2008", "Victoria_Circuit32", "Crystal_Dark30", "Prism_Aqua2017YT",
-    "P0werMysticV0rtex", "N0ahBac0nPh0enix", "ZapN0vaC0d3", "Ven0mStarStarry",
-    "William_Storm200422", "Z0e_W0LF2013", "HenryHunterdri", "RiderStormDawn2015",
-    "CrazeSpark201462", "XxAriaByteBuilderxX2", "GoldenStealthAqua200",
-    "LuckyUltraTurbo20031", "NinjaAceTurbo2024", "Ethan_Ghost97", "HazelDancerjqx",
-    "EvelynZoomShadowYT", "PixelChaseS0nic2017", "LeviBaneNinja93", "XxLavaCyberEpicxX",
-    "HazeBearChill2004", "MelissaForestrdi", "MeganGalaxy527", "XxVenomAceArrowxX202",
-    "Harp3rPr098", "XxCrystalEch0xX29"
+    "GabrielaCain9", "XxEllieDancerSkyxX", "DerrickBanana51", "ZAP_Craft200826",
+    "CalebBranch587", "BrittneyMorrow08", "AustinCruz9431", "BethanyStrong575",
+    "ViperEpicBac0n", "LeahMendoza9056", "NovaKingTurbo2018", "MiaArr0w65",
+    "HenrySummers9", "BunnyCarr438", "GabriellaHaley93530", "MikeKline8234",
+    "OmarLee75", "AdrianJordan4945", "HollyMccoy86000", "SamuelPrimal201678",
+    "Xx_ShadowStreamPanda", "HarryRoss382", "MikaylaHuang02168", "JoanneHolden25736",
+    "MeghanCooke79235", "AlejandraHunter23165", "ShariDavidson8449", "FleurCook5",
+    "PeggySantiago9", "HeidiLowe946", "StaceyMcpherson6", "VickiPeterson327",
+    "TraceyPatterson29", "AimeeBurnett96066", "VeronicaOpal307", "RiftAceBear2005",
+    "TravisReed18864", "GeorgeHaas7", "AlbertMunoz5", "MelindaMathews5",
+    "DinoAllison72761", "RobynBlanchard27", "TheodoreBeck832", "RocketChaseMagic2019",
+    "BarbaraKlein01932", "ButtercupGarcia76", "TimothyFrancis642", "NeilTerry98",
+    "KristinStewart72218", "GinaHardin98107", "ShelbyRowland39239", "DanaSchneider75581",
+    "AnnetteKey520", "MarciaBenton6595", "OwenBlastZoom2005", "ButtercupMoore18308",
+    "JeremyWare0621", "XxLavaWraithxX45", "LeviBond492", "CactiIngram31"
 }
 
 local BlacklistMap = {}
