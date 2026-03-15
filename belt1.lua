@@ -71,10 +71,10 @@ local function TweenTo(targetCFrame)
     local hrp      = character:WaitForChild("HumanoidRootPart")
     local humanoid = character:WaitForChild("Humanoid")
     local distance = (hrp.Position - targetCFrame.Position).Magnitude
-    if distance <= 250 then hrp.CFrame = targetCFrame return true end
+    if distance <= 250 then hrp.CFrame = targetCFrame; return true end
     local bv = hrp:FindFirstChild("DracoAntiGravity") or Instance.new("BodyVelocity")
-    bv.Name = "DracoAntiGravity"; bv.MaxForce = Vector3.new(math.huge,math.huge,math.huge)
-    bv.Velocity = Vector3.new(0,0,0); bv.Parent = hrp
+    bv.Name = "DracoAntiGravity"; bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.Velocity = Vector3.new(0, 0, 0); bv.Parent = hrp
     local speed = 300; local time = distance / speed
     local tweenObj = TweenService:Create(hrp, TweenInfo.new(time, Enum.EasingStyle.Linear), {CFrame = targetCFrame})
     local noclip
@@ -89,7 +89,7 @@ local function TweenTo(targetCFrame)
     tweenObj:Play(); tweenObj.Completed:Wait()
     if bv and bv.Parent then bv:Destroy() end
     if noclip then noclip:Disconnect() end
-    if humanoid and humanoid.Parent and humanoid.Health > 0 then humanoid:ChangeState(8) return true end
+    if humanoid and humanoid.Parent and humanoid.Health > 0 then humanoid:ChangeState(8); return true end
     return false
 end
 
@@ -121,62 +121,64 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- [ PHẦN 3 ] GIAO DIỆN MONITOR
+-- [ PHẦN 3 ] GIAO DIỆN MONITOR (VÀNG - ĐEN)
 -- ==========================================
 if CoreGui:FindFirstChild("DracoHubUI") then CoreGui.DracoHubUI:Destroy() end
 
-local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "DracoHubUI"
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "DracoHubUI"
+
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0,450,0,185); MainFrame.Position = UDim2.new(0.5,-225,0.5,-92)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15,15,15); MainFrame.Active = true; MainFrame.Draggable = true
-Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(255,200,0)
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0,8)
+MainFrame.Size = UDim2.new(0, 450, 0, 185); MainFrame.Position = UDim2.new(0.5, -225, 0.5, -92)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15); MainFrame.Active = true; MainFrame.Draggable = true
+Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(255, 200, 0)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1,0,0,35); Title.Text = " Draco Hub VuNguyen - V2 (4/4 Egg = Final)"
-Title.TextColor3 = Color3.fromRGB(255,200,0); Title.BackgroundTransparency = 1
+Title.Size = UDim2.new(1, 0, 0, 35); Title.Text = " Draco Hub VuNguyen - V2 (Egg Final)"
+Title.TextColor3 = Color3.fromRGB(255, 200, 0); Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold; Title.TextSize = 14; Title.TextXAlignment = Enum.TextXAlignment.Center
-local Line = Instance.new("Frame", Title); Line.Size = UDim2.new(1,0,0,1); Line.Position = UDim2.new(0,0,1,0)
-Line.BackgroundColor3 = Color3.fromRGB(255,200,0); Line.BorderSizePixel = 0
+local Line = Instance.new("Frame", Title); Line.Size = UDim2.new(1, 0, 0, 1)
+Line.Position = UDim2.new(0, 0, 1, 0); Line.BackgroundColor3 = Color3.fromRGB(255, 200, 0); Line.BorderSizePixel = 0
 
 local TPTradeBtn = Instance.new("TextButton", MainFrame)
-TPTradeBtn.Size = UDim2.new(0,70,0,25); TPTradeBtn.Position = UDim2.new(1,-80,1,-30)
-TPTradeBtn.BackgroundColor3 = Color3.fromRGB(15,15,15); TPTradeBtn.Text = "TP Trade"
-TPTradeBtn.TextColor3 = Color3.fromRGB(255,200,0); TPTradeBtn.Font = Enum.Font.GothamBold; TPTradeBtn.TextSize = 12
-Instance.new("UICorner", TPTradeBtn).CornerRadius = UDim.new(0,4)
-Instance.new("UIStroke", TPTradeBtn).Color = Color3.fromRGB(255,200,0)
+TPTradeBtn.Size = UDim2.new(0, 70, 0, 25); TPTradeBtn.Position = UDim2.new(1, -80, 1, -30)
+TPTradeBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15); TPTradeBtn.Text = "TP Trade"
+TPTradeBtn.TextColor3 = Color3.fromRGB(255, 200, 0); TPTradeBtn.Font = Enum.Font.GothamBold; TPTradeBtn.TextSize = 12
+Instance.new("UICorner", TPTradeBtn).CornerRadius = UDim.new(0, 4)
+Instance.new("UIStroke", TPTradeBtn).Color = Color3.fromRGB(255, 200, 0)
 
 local ManualDojoBtn = Instance.new("TextButton", MainFrame)
-ManualDojoBtn.Size = UDim2.new(0,105,0,25); ManualDojoBtn.Position = UDim2.new(1,-195,1,-30)
-ManualDojoBtn.BackgroundColor3 = Color3.fromRGB(15,15,15); ManualDojoBtn.Text = "Bật Script Dojo"
-ManualDojoBtn.TextColor3 = Color3.fromRGB(255,200,0); ManualDojoBtn.Font = Enum.Font.GothamBold
+ManualDojoBtn.Size = UDim2.new(0, 105, 0, 25); ManualDojoBtn.Position = UDim2.new(1, -195, 1, -30)
+ManualDojoBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15); ManualDojoBtn.Text = "Bật Script Dojo"
+ManualDojoBtn.TextColor3 = Color3.fromRGB(255, 200, 0); ManualDojoBtn.Font = Enum.Font.GothamBold
 ManualDojoBtn.TextSize = 12; ManualDojoBtn.Visible = false
-Instance.new("UICorner", ManualDojoBtn).CornerRadius = UDim.new(0,4)
-Instance.new("UIStroke", ManualDojoBtn).Color = Color3.fromRGB(255,200,0)
+Instance.new("UICorner", ManualDojoBtn).CornerRadius = UDim.new(0, 4)
+Instance.new("UIStroke", ManualDojoBtn).Color = Color3.fromRGB(255, 200, 0)
 
 local InfoPanel = Instance.new("Frame", MainFrame)
-InfoPanel.Size = UDim2.new(1,-20,1,-50); InfoPanel.Position = UDim2.new(0,10,0,40); InfoPanel.BackgroundTransparency = 1
+InfoPanel.Size = UDim2.new(1, -20, 1, -50); InfoPanel.Position = UDim2.new(0, 10, 0, 40); InfoPanel.BackgroundTransparency = 1
 
 local SpawnLabel = Instance.new("TextLabel", InfoPanel)
-SpawnLabel.Size = UDim2.new(1,0,0,25); SpawnLabel.Text = "Dragon Talon: Đang kiểm tra..."
-SpawnLabel.TextColor3 = Color3.fromRGB(255,255,255); SpawnLabel.Font = Enum.Font.GothamBold
+SpawnLabel.Size = UDim2.new(1, 0, 0, 25); SpawnLabel.Text = "Dragon Talon: Đang kiểm tra..."
+SpawnLabel.TextColor3 = Color3.fromRGB(255, 255, 255); SpawnLabel.Font = Enum.Font.GothamBold
 SpawnLabel.BackgroundTransparency = 1; SpawnLabel.TextSize = 13; SpawnLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 ActionStatus = Instance.new("TextLabel", InfoPanel)
-ActionStatus.Size = UDim2.new(1,0,0,25); ActionStatus.Position = UDim2.new(0,0,0,25)
-ActionStatus.Text = "Hành động: Khởi động kịch bản..."; ActionStatus.TextColor3 = Color3.fromRGB(200,200,200)
+ActionStatus.Size = UDim2.new(1, 0, 0, 25); ActionStatus.Position = UDim2.new(0, 0, 0, 25)
+ActionStatus.Text = "Hành động: Khởi động kịch bản..."; ActionStatus.TextColor3 = Color3.fromRGB(200, 200, 200)
 ActionStatus.Font = Enum.Font.Gotham; ActionStatus.BackgroundTransparency = 1
 ActionStatus.TextSize = 12; ActionStatus.TextXAlignment = Enum.TextXAlignment.Left
 
 local MasteryLabel = Instance.new("TextLabel", InfoPanel)
-MasteryLabel.Size = UDim2.new(1,0,0,25); MasteryLabel.Position = UDim2.new(0,0,0,50)
-MasteryLabel.Text = "Mastery: Chờ xác nhận vũ khí..."; MasteryLabel.TextColor3 = Color3.fromRGB(255,200,0)
+MasteryLabel.Size = UDim2.new(1, 0, 0, 25); MasteryLabel.Position = UDim2.new(0, 0, 0, 50)
+MasteryLabel.Text = "Mastery: Chờ xác nhận vũ khí..."; MasteryLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
 MasteryLabel.Font = Enum.Font.GothamBold; MasteryLabel.BackgroundTransparency = 1
 MasteryLabel.TextSize = 13; MasteryLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local FragmentLabel = Instance.new("TextLabel", InfoPanel)
-FragmentLabel.Size = UDim2.new(1,0,0,25); FragmentLabel.Position = UDim2.new(0,0,0,75)
-FragmentLabel.Text = "Fragment: Đang kiểm tra..."; FragmentLabel.TextColor3 = Color3.fromRGB(180,130,255)
+FragmentLabel.Size = UDim2.new(1, 0, 0, 25); FragmentLabel.Position = UDim2.new(0, 0, 0, 75)
+FragmentLabel.Text = "Fragment: Đang kiểm tra..."; FragmentLabel.TextColor3 = Color3.fromRGB(180, 130, 255)
 FragmentLabel.Font = Enum.Font.GothamBold; FragmentLabel.BackgroundTransparency = 1
 FragmentLabel.TextSize = 13; FragmentLabel.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -186,22 +188,19 @@ FragmentLabel.TextSize = 13; FragmentLabel.TextXAlignment = Enum.TextXAlignment.
 TPTradeBtn.MouseButton1Click:Connect(function()
     task.spawn(function()
         ActionStatus.Text = "Hành động: Đang bay đến bàn Trade..."
-        TPTradeBtn.Text = "Đang bay..."
-        TweenTo(Trade_CFrame)
-        TPTradeBtn.Text = "TP Trade"
-        ActionStatus.Text = "Hành động: Đã đến khu Trade!"
+        TPTradeBtn.Text = "Đang bay..."; TweenTo(Trade_CFrame)
+        TPTradeBtn.Text = "TP Trade"; ActionStatus.Text = "Hành động: Đã đến khu Trade!"
     end)
 end)
 
 task.spawn(function()
     while true do
         if CheckDragonTalon() then
-            local m = GetWeaponMastery("Dragon Talon")
-            MasteryLabel.Text = "Mastery: " .. m .. "/500"
-            MasteryLabel.TextColor3 = m >= 500 and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,200,0)
+            local cm = GetWeaponMastery("Dragon Talon")
+            MasteryLabel.Text = "Mastery: " .. cm .. "/500"
+            MasteryLabel.TextColor3 = cm >= 500 and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 200, 0)
         else
-            MasteryLabel.Text = "Mastery: Đang đợi lấy vũ khí..."
-            MasteryLabel.TextColor3 = Color3.fromRGB(255,0,0)
+            MasteryLabel.Text = "Mastery: Đang đợi lấy vũ khí..."; MasteryLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
         end
         task.wait(1)
     end
@@ -211,34 +210,33 @@ task.spawn(function()
     while true do
         local frag = GetFragments(); local toggleOn = getgenv().fragment == true
         if not toggleOn then
-            FragmentLabel.Text = "Fragment: " .. frag .. " [Farm: TẮT]"
-            FragmentLabel.TextColor3 = Color3.fromRGB(150,150,150)
+            FragmentLabel.Text = "Fragment: " .. frag .. " [Farm: TẮT]"; FragmentLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
         else
             FragmentLabel.Text = "Fragment: " .. frag .. " / " .. FRAGMENT_MIN .. " [Farm: BẬT]"
-            FragmentLabel.TextColor3 = frag >= FRAGMENT_MIN and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,100,100)
+            FragmentLabel.TextColor3 = frag >= FRAGMENT_MIN and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 100, 100)
         end
         task.wait(2)
     end
 end)
 
 local function DoBuyDragonTalon()
-    local CommF = game:GetService("ReplicatedStorage").Remotes.CommF_
+    local RS = game:GetService("ReplicatedStorage"); local CommF = RS.Remotes.CommF_
     pcall(function()
         local check = CommF:InvokeServer("BuyDragonTalon", true)
-        if check == 3 then CommF:InvokeServer("Bones","Buy",1,1); task.wait(0.3); CommF:InvokeServer("BuyDragonTalon",true)
+        if check == 3 then CommF:InvokeServer("Bones", "Buy", 1, 1); task.wait(0.3); CommF:InvokeServer("BuyDragonTalon", true)
         elseif check == 1 then CommF:InvokeServer("BuyDragonTalon")
-        else CommF:InvokeServer("Bones","Buy",1,1); task.wait(0.3); CommF:InvokeServer("BuyDragonTalon",true); task.wait(0.3); CommF:InvokeServer("BuyDragonTalon") end
+        else CommF:InvokeServer("Bones", "Buy", 1, 1); task.wait(0.3); CommF:InvokeServer("BuyDragonTalon", true); task.wait(0.3); CommF:InvokeServer("BuyDragonTalon") end
     end)
 end
 
 task.spawn(function()
     while true do
         if CheckDragonTalon() then
-            SpawnLabel.Text = "Dragon Talon: Đã sở hữu"; SpawnLabel.TextColor3 = Color3.fromRGB(0,255,0); break
+            SpawnLabel.Text = "Dragon Talon: Đã sở hữu"; SpawnLabel.TextColor3 = Color3.fromRGB(0, 255, 0); break
         else
-            SpawnLabel.Text = "Dragon Talon: Chưa có"; SpawnLabel.TextColor3 = Color3.fromRGB(255,0,0)
+            SpawnLabel.Text = "Dragon Talon: Chưa có"; SpawnLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
             ActionStatus.Text = "Hành động: Đang bay đến mua Dragon Talon..."
-            if TweenTo(Uzoth_CFrame) then DoBuyDragonTalon() end
+            local arrived = TweenTo(Uzoth_CFrame); if arrived then DoBuyDragonTalon() end
         end
         task.wait(5)
     end
@@ -257,13 +255,14 @@ end
 local function CheckItemInInv(invData, itemName)
     local p = game.Players.LocalPlayer
     if p.Character and p.Character:FindFirstChild(itemName) then return true, 1 end
-    local bp = p:FindFirstChild("Backpack")
-    if bp and bp:FindFirstChild(itemName) then return true, 1 end
+    local bp = p:FindFirstChild("Backpack"); if bp and bp:FindFirstChild(itemName) then return true, 1 end
     for _, v in pairs(invData) do if type(v) == "table" and v.Name == itemName then return true, (v.Count or 1) end end
     return false, 0
 end
 
+-- ==========================================
 -- BỘ XỬ LÝ FILE JSON
+-- ==========================================
 local HttpService = game:GetService("HttpService")
 local JsonFileName = "DRCHUB_" .. Player.Name .. ".json"
 
@@ -278,15 +277,6 @@ local function WriteJson(data) pcall(function() writefile(JsonFileName, HttpServ
 local function SaveLearnStatus() local data = ReadJson(); data.Status = "StatusLearnDone"; WriteJson(data) end
 local function IsLearnDone() local data = ReadJson(); return data.Status == "StatusLearnDone" end
 local function ClearBlackBeltFailed() local data = ReadJson(); if data.NotDoneBlack then data.NotDoneBlack = nil; WriteJson(data) end end
-
--- CHECK FILE COMPLETED-EGG
-local function IsEggCompleted()
-    local ok, c = pcall(function()
-        if readfile and isfile and isfile(Player.Name .. ".txt") then return readfile(Player.Name .. ".txt") end
-        return nil
-    end)
-    return ok and c == "Completed-egg"
-end
 
 -- ==========================================
 -- TRÌNH QUẢN LÝ LOAD SCRIPT BANANA HUB
@@ -306,25 +296,25 @@ local function LoadBananaHub(typeStr)
                 ["Select Method Farm"] = "Farm Bones", ["Start Farm"] = false,
                 ["Auto Quest Dojo Trainer"] = true, ["Select Zone"] = "Zone 6",
                 ["Select Boat"] = "Brigade",
-                ["Select Sea Events"] = {["Shark"]=true,["Terrorshark"]=true,["Piranha"]=true,["Ship"]=true}
+                ["Select Sea Events"] = { ["Shark"] = true, ["Terrorshark"] = true, ["Piranha"] = true, ["Ship"] = true }
             }
         elseif typeStr == "Golem" then
             getgenv().Config = {
                 ["Select Weapon Kill Golem"] = "Melee", ["Select Method Kill Golem"] = "Click M1",
                 ["Auto Collect Bone"] = true, ["Auto Collect Egg"] = true,
                 ["Ignore Craft Volcanic Magnet"] = true, ["Fully Event Prehistoric Island"] = true,
-                ["Select Weapons Fix Lava"] = {["Melee"]=true,["Sword"]=true}
+                ["Select Weapons Fix Lava"] = {["Melee"] = true, ["Sword"] = true}
             }
         elseif typeStr == "Bone" then
             getgenv().Config = {["Select Method Farm"] = "Farm Bones", ["Start Farm"] = true}
         elseif typeStr == "FarmFragment" then
             hubKey = "1f34f32b6f1917a66d57e8c6"
-            getgenv().Config = {["Select Method Farm"] = "Farm Katakuri", ["Hop Find Katakuri"] = true, ["Start Farm"] = true}
+            getgenv().Config = { ["Select Method Farm"] = "Farm Katakuri", ["Hop Find Katakuri"] = true, ["Start Farm"] = true }
         end
         getgenv().Key = hubKey
         local ok, err = pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))() end)
         if ok then _G.HubLoadedType = typeStr; warn("[BananaHub] Load: " .. typeStr)
-        else _G.HubLoadedType = "None"; warn("[BananaHub] Fail: " .. tostring(err)) end
+        else _G.HubLoadedType = "None"; warn("[BananaHub] Fail (" .. typeStr .. "): " .. tostring(err)) end
         _G.HubIsLoading = false
         if ManualDojoBtn then ManualDojoBtn.Visible = false end
     end)
@@ -336,17 +326,25 @@ ManualDojoBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
+-- CHECK ĐÃ HOÀN THÀNH CHƯA (file Completed-egg)
+-- ==========================================
+pcall(function()
+    if isfile and isfile(Player.Name .. ".txt") then
+        local content = readfile(Player.Name .. ".txt")
+        if content == "Completed-egg" then
+            ActionStatus.Text = "✅ Đã hoàn thành 4/4 Egg từ trước! Dừng script."
+            ActionStatus.TextColor3 = Color3.fromRGB(0, 255, 0)
+            warn("[DracoHub] File Completed-egg đã tồn tại. Dừng.")
+            return
+        end
+    end
+end)
+
+-- ==========================================
 -- LUỒNG KIỂM SOÁT TỐI THƯỢNG
--- (4/4 Dragon Egg = BƯỚC CUỐI → ghi file + dừng)
+-- (4/4 Dragon Egg = BƯỚC CUỐI, không có Phase 6)
 -- ==========================================
 task.spawn(function()
-    -- Check đã hoàn thành egg từ trước
-    if IsEggCompleted() then
-        ActionStatus.Text = "✅ Đã hoàn thành 4/4 Egg từ trước! (file Completed-egg)"
-        ActionStatus.TextColor3 = Color3.fromRGB(0, 255, 0)
-        return
-    end
-
     repeat task.wait(1) until CheckDragonTalon()
 
     local initialInv    = GetInventoryData()
@@ -359,7 +357,7 @@ task.spawn(function()
     while task.wait(4) do
 
         -- ==========================================
-        -- [ KIỂM TRA FRAGMENT ]
+        -- [ 1. KIỂM TRA FRAGMENT ]
         -- ==========================================
         if getgenv().fragment == true then
             local currentFrag = GetFragments()
@@ -381,7 +379,7 @@ task.spawn(function()
         end
 
         -- ==========================================
-        -- [ MASTERY DRAGON TALON ]
+        -- [ 2. MASTERY DRAGON TALON < 500 ]
         -- ==========================================
         local currentMastery = GetWeaponMastery("Dragon Talon")
         if currentMastery < 500 then
@@ -390,19 +388,21 @@ task.spawn(function()
 
         else
             -- ==========================================
-            -- [ CHECK INVENTORY ]
+            -- [ 3. CHECK INVENTORY ]
             -- ==========================================
             local inv, invValid = GetInventoryData()
             if not invValid then
-                ActionStatus.Text = "Hành động: [!] Inventory lỗi (" .. _invFailCount .. ")..."
+                if _invFailCount <= 3 then ActionStatus.Text = "Hành động: [!] Inventory lỗi (" .. _invFailCount .. "/3)..."
+                else ActionStatus.Text = "Hành động: [!] Inventory lỗi mạng, giữ state: " .. CURRENT_STATE end
             else
                 local hasRed       = CheckItemInInv(inv, "Dojo Belt (Red)")
                 local hasBlack     = CheckItemInInv(inv, "Dojo Belt (Black)")
+                local hasPurple    = CheckItemInInv(inv, "Dojo Belt (Purple)")
                 local _, boneCount = CheckItemInInv(inv, "Dinosaur Bones")
                 local _, eggCount  = CheckItemInInv(inv, "Dragon Egg")
 
                 -- ==========================================
-                -- [ SMART KICK: mới nhận item quan trọng ]
+                -- [ 4. SMART KICK - nhận item mới ]
                 -- ==========================================
                 if hasRed   and not startRed   then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Red Belt."); break end
                 if hasBlack and not startBlack then task.wait(1); Player:Kick("\n[ Draco Hub ]\nSở hữu Black Belt."); break end
@@ -411,19 +411,18 @@ task.spawn(function()
                 end
 
                 -- ==========================================
-                -- [ CÓ BLACK BELT ]
+                -- [ 5. CÓ BLACK BELT ]
                 -- ==========================================
                 if hasBlack then
                     ClearBlackBeltFailed()
 
                     if IsLearnDone() then
-                        -- ========================================
+                        -- =============================================
                         -- ĐÃ HỌC TETHER → CHECK EGG (BƯỚC CUỐI)
-                        -- ========================================
-
-                        -- 4/4 Dragon Egg = HOÀN THÀNH → ghi file + dừng
+                        -- =============================================
                         if eggCount >= 4 then
-                            ActionStatus.Text = "🎉 ĐÃ ĐỦ 4/4 DRAGON EGG! GHI FILE..."
+                            -- *** 4/4 DRAGON EGG = HOÀN THÀNH ***
+                            ActionStatus.Text = "Hành động: 🎉 ĐÃ ĐỦ 4/4 DRAGON EGG!"
                             ActionStatus.TextColor3 = Color3.fromRGB(0, 255, 0)
                             pcall(function()
                                 if writefile then
@@ -431,22 +430,22 @@ task.spawn(function()
                                     warn("[DracoHub] GHI FILE: " .. Player.Name .. ".txt → Completed-egg")
                                 end
                             end)
-                            ActionStatus.Text = "✅ HOÀN THÀNH! File Completed-egg đã ghi. Dừng tất cả."
+                            ActionStatus.Text = "✅ HOÀN THÀNH! File Completed-egg đã ghi. Dừng mọi hoạt động."
                             CURRENT_STATE = "COMPLETED_EGG"
                             break -- DỪNG VÒNG LẶP → VÔ HIỆU HÓA TẤT CẢ PHASE SAU
+                        else
+                            -- Chưa đủ 4 Egg → farm Golem
+                            if CURRENT_STATE ~= "HUNT_EGG" then
+                                CURRENT_STATE = "HUNT_EGG"
+                                LoadBananaHub("Golem")
+                            end
+                            ActionStatus.Text = "Hành động: Săn Dragon Egg (" .. eggCount .. "/4)..."
                         end
-
-                        -- Chưa đủ 4 Egg → farm Golem
-                        if CURRENT_STATE ~= "HUNT_EGG" then
-                            CURRENT_STATE = "HUNT_EGG"
-                            LoadBananaHub("Golem")
-                        end
-                        ActionStatus.Text = "Hành động: Săn Dragon Egg (" .. eggCount .. "/4)..."
 
                     else
-                        -- ========================================
+                        -- =============================================
                         -- CHƯA HỌC TETHER
-                        -- ========================================
+                        -- =============================================
                         if boneCount >= 3 then
                             CURRENT_STATE = "LEARN_TETHER"
                             ActionStatus.Text = "Hành động: Đủ Belt & Bone! Bay đến Dragon Wizard..."
@@ -460,48 +459,112 @@ task.spawn(function()
                                         :WaitForChild("RF/InteractDragonQuest")
                                 end)
                                 if ok1 and RF1 then
-                                    pcall(function() RF1:InvokeServer(unpack({[1]={NPC="Dragon Wizard",Command="Speak"}})) end)
+                                    pcall(function() RF1:InvokeServer(unpack({[1] = {NPC = "Dragon Wizard", Command = "Speak"}})) end)
                                     task.wait(3)
                                     local res
-                                    pcall(function() res = RF1:InvokeServer(unpack({[1]={NPC="Dragon Wizard",Command="LearnTether"}})) end)
+                                    pcall(function() res = RF1:InvokeServer(unpack({[1] = {NPC = "Dragon Wizard", Command = "LearnTether"}})) end)
                                     if res ~= false then
                                         SaveLearnStatus()
                                         CURRENT_STATE = "UNKNOWN"
-                                        ActionStatus.Text = "Hành động: Đã học Tether! Tiếp tục farm Egg..."
+                                        ActionStatus.Text = "Hành động: Đã học Tether! Chuyển sang farm Egg..."
                                     end
                                 end
                             end
                         else
-                            -- Thiếu Bones → farm Golem lấy bones
+                            -- Thiếu Bones → farm Golem
                             if CURRENT_STATE ~= "FARM_GOLEM_BONE" then
                                 CURRENT_STATE = "FARM_GOLEM_BONE"
                                 LoadBananaHub("Golem")
                             end
-                            ActionStatus.Text = "Hành động: Thiếu xương cho Tether (" .. boneCount .. "/3)..."
+                            ActionStatus.Text = "Hành động: Thiếu xương để học Tether (" .. boneCount .. "/3)..."
                         end
                     end
 
-                -- ==========================================
-                -- [ CHƯA CÓ BLACK BELT → FARM DOJO ]
-                -- ==========================================
                 else
-                    -- Có Red Belt + đủ Bones → load Dojo Trainer claim Black
+                    -- ==========================================
+                    -- [ 6. CHƯA CÓ BLACK BELT → FARM DOJO ]
+                    -- ==========================================
+
+                    -- Có Red Belt + đủ Bones >= 3 → load Dojo Trainer claim Black
                     if hasRed and boneCount >= 3 then
                         if CURRENT_STATE ~= "FARM_DOJO_CLAIM_BLACK" then
                             CURRENT_STATE = "FARM_DOJO_CLAIM_BLACK"
                             LoadBananaHub("Dojo")
                         end
-                        ActionStatus.Text = "Hành động: Có Red + 3 Bones → Dojo Trainer claim Black Belt..."
+                        ActionStatus.Text = "Hành động: Có Red + 3 Bone → Farm Dojo claim Black Belt..."
 
-                    -- Có Red Belt + thiếu Bones → farm Golem lấy bones
+                    -- Có Red Belt + thiếu Bones → farm Golem lấy Bones
                     elseif hasRed and boneCount < 3 then
                         if CURRENT_STATE ~= "FARM_GOLEM_FOR_BLACK" then
                             CURRENT_STATE = "FARM_GOLEM_FOR_BLACK"
                             LoadBananaHub("Golem")
                         end
-                        ActionStatus.Text = "Hành động: Có Red, thiếu Bones (" .. boneCount .. "/3) → Farm Golem..."
+                        ActionStatus.Text = "Hành động: Có Red, thiếu Bone (" .. boneCount .. "/3) → Farm Golem..."
 
-                    -- Chưa có Red → farm Dojo từ đầu
+                    -- Có Purple Belt + chưa có Red → farm Dojo để lên Red
+                    elseif hasPurple and not hasRed then
+                        if CURRENT_STATE ~= "FARM_DOJO_PURPLE_TO_RED" then
+                            CURRENT_STATE = "FARM_DOJO_PURPLE_TO_RED"
+                            LoadBananaHub("Dojo")
+
+                            -- Bật Terror Shark kill detector (chỉ bật 1 lần)
+                            if not getgenv()._terrorSharkDetectorRunning then
+                                getgenv()._terrorSharkDetectorRunning = true
+                                task.spawn(function()
+                                    warn("[DracoHub] Terrorshark detector ON")
+                                    while getgenv()._terrorSharkDetectorRunning do
+                                        task.wait(1)
+
+                                        -- Tự hủy nếu state thay đổi
+                                        if CURRENT_STATE ~= "FARM_DOJO_PURPLE_TO_RED" then
+                                            getgenv()._terrorSharkDetectorRunning = false
+                                            warn("[DracoHub] Terrorshark detector OFF (state changed)")
+                                            break
+                                        end
+
+                                        -- Tìm Terrorshark trong workspace.Enemies
+                                        for _, mob in pairs(workspace.Enemies:GetChildren()) do
+                                            if mob.Name == "Terrorshark" and mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") then
+                                                local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+                                                if not hrp then continue end
+
+                                                -- Check gần mình (đang bị mình đánh = trong tầm attack)
+                                                local dist = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
+                                                if dist <= 300 then
+                                                    -- Tìm thấy Terrorshark gần mình → theo dõi HP cho đến khi chết
+                                                    if ActionStatus then
+                                                        ActionStatus.Text = "🦈 Terrorshark gần mình! Đang theo dõi HP..."
+                                                        ActionStatus.TextColor3 = Color3.fromRGB(255, 200, 0)
+                                                    end
+                                                    warn("[DracoHub] Terrorshark found near player, tracking HP...")
+
+                                                    -- Chờ cho đến khi nó chết (HP <= 0 hoặc biến mất)
+                                                    repeat
+                                                        task.wait(0.5)
+                                                    until not mob or not mob.Parent
+                                                        or not mob:FindFirstChild("Humanoid")
+                                                        or mob.Humanoid.Health <= 0
+
+                                                    -- Terrorshark đã chết bởi mình
+                                                    if ActionStatus then
+                                                        ActionStatus.Text = "🦈 TERRORSHARK ĐÃ CHẾT! Kick sau 5s..."
+                                                        ActionStatus.TextColor3 = Color3.fromRGB(255, 100, 0)
+                                                    end
+                                                    warn("[DracoHub] Terrorshark killed by player → delay 5s → kick")
+                                                    getgenv()._terrorSharkDetectorRunning = false
+                                                    task.wait(5)
+                                                    Player:Kick("\n[ Draco Hub ]\nĐã kill Terrorshark trong Dojo quest.\nRejoin để tiếp tục.")
+                                                    return
+                                                end
+                                            end
+                                        end
+                                    end
+                                end)
+                            end
+                        end
+                        ActionStatus.Text = "Hành động: Có Purple, chưa có Red → Farm Dojo (+ detect Terrorshark)..."
+
+                    -- Chưa có Purple → farm Dojo từ đầu
                     else
                         if CURRENT_STATE ~= "FARM_DOJO_EARLY" then
                             CURRENT_STATE = "FARM_DOJO_EARLY"
@@ -512,5 +575,10 @@ task.spawn(function()
                 end
             end
         end
+    end
+
+    -- Sau khi break (hoàn thành hoặc kick)
+    if CURRENT_STATE == "COMPLETED_EGG" then
+        warn("[DracoHub] === HOÀN THÀNH 4/4 EGG - SCRIPT DỪNG ===")
     end
 end)
