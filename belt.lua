@@ -380,9 +380,22 @@ task.spawn(function()
 
         -- ==========================================
         -- [ 2. MASTERY DRAGON TALON < 500 ]
+        -- Chỉ farm mastery nếu CHƯA có belt nào (Purple/Red/Black)
+        -- Nếu đã có belt = đã qua giai đoạn mastery rồi
         -- ==========================================
         local currentMastery = GetWeaponMastery("Dragon Talon")
-        if currentMastery < 500 then
+
+        -- Pre-check: có belt nào chưa (quick check không cần full inventory)
+        local hasAnyBelt = false
+        pcall(function()
+            local quickInv = GetInventoryData()
+            local p1 = CheckItemInInv(quickInv, "Dojo Belt (Purple)")
+            local r1 = CheckItemInInv(quickInv, "Dojo Belt (Red)")
+            local b1 = CheckItemInInv(quickInv, "Dojo Belt (Black)")
+            hasAnyBelt = p1 or r1 or b1
+        end)
+
+        if currentMastery < 500 and not hasAnyBelt then
             if CURRENT_STATE ~= "FARM_BONE" then CURRENT_STATE = "FARM_BONE"; LoadBananaHub("Bone") end
             ActionStatus.Text = "Hành động: Farm Mastery Dragon Talon (" .. currentMastery .. "/500)..."
 
