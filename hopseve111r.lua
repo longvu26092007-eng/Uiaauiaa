@@ -4,10 +4,6 @@
 -- Chỉ dùng __ServerBrowser (KaitunBoss) để hop
 -- ======================================================================
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TeleportService   = game:GetService("TeleportService")
-local Players           = game:GetService("Players")
-local StarterGui        = game:GetService("StarterGui")
 local GuiService        = game:GetService("GuiService")
 
 local LocalPlayer = Players.LocalPlayer
