@@ -1,6 +1,6 @@
 -- =============================================================
--- DRACO ANTI-STALKER V15.3 - OPTIMIZED + AUTO TEAM MARINES
--- Cơ chế: Chọn Team -> Quét 3 lần -> Bỏ qua bản thân -> Tự hủy nếu an toàn
+-- DRACO ANTI-STALKER V16 - __ServerBrowser HOP
+-- Cơ chế: Chọn Team -> Quét 3 lần -> Bỏ qua bản thân -> Hop __ServerBrowser
 -- =============================================================
 
 repeat task.wait() until game:IsLoaded()
@@ -8,9 +8,13 @@ repeat task.wait() until game.Players and game.Players.LocalPlayer
 repeat task.wait() until game.Players.LocalPlayer:FindFirstChild("PlayerGui")
 
 local Players             = game:GetService("Players")
+local ReplicatedStorage   = game:GetService("ReplicatedStorage")
 local CoreGui             = game:GetService("CoreGui")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local TeleportService     = game:GetService("TeleportService")
+local GuiService          = game:GetService("GuiService")
 local LocalPlayer         = Players.LocalPlayer
+local PlaceId, JobId      = game.PlaceId, game.JobId
 
 -- ==========================================
 -- [ PHẦN 0 ] AUTO CHỌN TEAM
@@ -24,8 +28,8 @@ if LocalPlayer.Team == nil then
             if string.find(v.Name, "Main") then
                 pcall(function()
                     local teamBtn = v.ChooseTeam.Container[getgenv().Team].Frame.TextButton
-                    teamBtn.Size                    = UDim2.new(0, 10000, 0, 10000)
-                    teamBtn.Position                = UDim2.new(-4, 0, -5, 0)
+                    teamBtn.Size                   = UDim2.new(0, 10000, 0, 10000)
+                    teamBtn.Position               = UDim2.new(-4, 0, -5, 0)
                     teamBtn.BackgroundTransparency = 1
                     task.wait(0.5)
                     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true,  game, 1)
@@ -43,9 +47,8 @@ repeat task.wait() until LocalPlayer.Character
     and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 
 -- ==========================================
--- [ PHẦN 1 ] ANTI-STALKER LOGIC (UPDATED NEW BLACKLIST)
+-- [ PHẦN 1 ] BLACKLIST
 -- ==========================================
-
 local RawBlacklist = {
     "GabrielaCain9", "XxEllieDancerSkyxX", "DerrickBanana51", "ZAP_Craft200826",
     "CalebBranch587", "BrittneyMorrow08", "AustinCruz9431", "BethanyStrong575",
@@ -69,8 +72,9 @@ for _, name in ipairs(RawBlacklist) do
     BlacklistMap[name] = true
 end
 
-local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopsever.lua"
-
+-- ==========================================
+-- [ PHẦN 2 ] UI
+-- ==========================================
 local SafeGuiParent = pcall(function() return gethui() end) and gethui()
     or CoreGui:FindFirstChild("RobloxGui") or CoreGui
 if SafeGuiParent:FindFirstChild("AntiStalkerUI") then
@@ -96,6 +100,83 @@ Status.TextColor3             = Color3.new(1, 1, 1)
 Status.Font                   = Enum.Font.GothamBold
 Status.TextSize               = 11
 
+-- ==========================================
+-- [ PHẦN 3 ] HOP SERVER (__ServerBrowser)
+-- Y chang Purple Belt script
+-- ==========================================
+local LastPull, CachedSrv
+
+local function GetServers()
+    if LastPull and os.time() - LastPull < 60 then return CachedSrv end
+    for i = 1, 100 do
+        local ok, data = pcall(function()
+            return ReplicatedStorage:WaitForChild("__ServerBrowser"):InvokeServer(i)
+        end)
+        if ok and data then
+            local h = false
+            for _ in data do h = true; break end
+            if h then
+                LastPull = os.time()
+                CachedSrv = data
+                return data
+            end
+        end
+    end
+    return nil
+end
+
+local function HopServer(reason)
+    Status.Text = "🔄 Hop: " .. tostring(reason)
+    Status.TextColor3 = Color3.new(1, 1, 0)
+
+    local Servers = GetServers()
+    if not Servers then
+        Status.Text = "❌ Không lấy được server list"
+        return false
+    end
+
+    local arr = {}
+    for jid, v in Servers do
+        arr[#arr + 1] = {JobId = jid, Players = v.Count, Region = v.Region}
+    end
+
+    for _ = 1, math.min(#arr, 20) do
+        local sd = arr[math.random(1, #arr)]
+        if sd and sd.Players < 5 then
+            Status.Text = "🚀 → " .. string.sub(sd.JobId, 1, 12) .. " (" .. sd.Players .. "p)"
+            pcall(function()
+                ReplicatedStorage:WaitForChild("__ServerBrowser"):InvokeServer("teleport", sd.JobId)
+            end)
+            task.wait(10)
+            return true
+        end
+    end
+
+    Status.Text = "❌ Không tìm server phù hợp"
+    return false
+end
+
+-- ==========================================
+-- [ PHẦN 4 ] ANTI-DISCONNECT (từ Purple Belt)
+-- ==========================================
+TeleportService.TeleportInitFailed:Connect(function(_, teleportResult, message)
+    if teleportResult == Enum.TeleportResult.IsTeleporting and message:find("previous teleport") then
+        task.delay(10, function() game:Shutdown() end)
+    end
+end)
+
+GuiService.ErrorMessageChanged:Connect(newcclosure(function()
+    if GuiService:GetErrorType() == Enum.ConnectionError.DisconnectErrors then
+        while true do
+            TeleportService:TeleportToPlaceInstance(PlaceId, JobId, LocalPlayer)
+            task.wait(5)
+        end
+    end
+end))
+
+-- ==========================================
+-- [ PHẦN 5 ] ANTI-STALKER LOGIC
+-- ==========================================
 local PlayerAddedConnection
 local isHopping = false
 
@@ -106,9 +187,7 @@ local function DoHop(detectedName)
     Status.Text       = "🚨 PHÁT HIỆN: " .. detectedName
     Status.TextColor3 = Color3.new(1, 0, 0)
     task.wait(0.5)
-    pcall(function()
-        loadstring(game:HttpGet(HopScriptURL))()
-    end)
+    HopServer("Stalker: " .. detectedName)
 end
 
 local function CheckPlayers()
@@ -129,12 +208,14 @@ local function DestructScript()
     if ScreenGui then ScreenGui:Destroy() end
 end
 
+-- Theo dõi player mới join
 PlayerAddedConnection = Players.PlayerAdded:Connect(function(p)
     if p ~= LocalPlayer and BlacklistMap[p.Name] then
         DoHop(p.Name)
     end
 end)
 
+-- Quét 3 lần
 task.spawn(function()
     task.wait(1)
     for i = 1, 3 do
