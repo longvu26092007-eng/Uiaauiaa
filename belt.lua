@@ -1,4 +1,19 @@
 -- ==========================================
+-- [ KEY CHECK ] — Lấy key từ executor bên ngoài
+-- ==========================================
+-- Cách dùng ở executor:
+--   getgenv().Key = "51e126ee832d3c4fff7b6178"
+--   loadstring(game:HttpGet("...link git chứa lua..."))()
+-- ==========================================
+local NhapKey = getgenv().Key
+
+if not NhapKey or NhapKey == "" then
+    warn("[DracoHub] ❌ Chưa set getgenv().Key ở executor! Hủy script.")
+    return
+end
+warn("[DracoHub] ✅ Key nhận được: " .. string.sub(NhapKey, 1, 6) .. "***")
+
+-- ==========================================
 -- [ PHẦN 0 : CHỌN TEAM & ĐỢI GAME LOAD ]
 -- ==========================================
 getgenv().Team = getgenv().Team or "Marines"
@@ -280,6 +295,7 @@ local function ClearBlackBeltFailed() local data = ReadJson(); if data.NotDoneBl
 
 -- ==========================================
 -- TRÌNH QUẢN LÝ LOAD SCRIPT BANANA HUB
+-- Dùng NhapKey từ executor, không hardcode key
 -- ==========================================
 _G.HubLoadedType = _G.HubLoadedType or "None"
 _G.HubIsLoading  = _G.HubIsLoading  or false
@@ -289,7 +305,6 @@ local function LoadBananaHub(typeStr)
     if _G.HubIsLoading then return end
     _G.HubIsLoading = true
     task.spawn(function()
-        local hubKey = "51e126ee832d3c4fff7b6178"
         getgenv().NewUI = true
         if typeStr == "Dojo" then
             getgenv().Config = {
@@ -308,12 +323,11 @@ local function LoadBananaHub(typeStr)
         elseif typeStr == "Bone" then
             getgenv().Config = {["Select Method Farm"] = "Farm Bones", ["Start Farm"] = true}
         elseif typeStr == "FarmFragment" then
-            hubKey = "1f34f32b6f1917a66d57e8c6"
             getgenv().Config = { ["Select Method Farm"] = "Farm Katakuri", ["Hop Find Katakuri"] = true, ["Start Farm"] = true }
         end
-        getgenv().Key = hubKey
+        getgenv().Key = NhapKey  -- ← key từ executor
         local ok, err = pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/obiiyeuem/vthangsitink/main/BananaHub.lua"))() end)
-        if ok then _G.HubLoadedType = typeStr; warn("[BananaHub] Load: " .. typeStr)
+        if ok then _G.HubLoadedType = typeStr; warn("[BananaHub] Load: " .. typeStr .. " (key=" .. string.sub(NhapKey, 1, 6) .. "***)")
         else _G.HubLoadedType = "None"; warn("[BananaHub] Fail (" .. typeStr .. "): " .. tostring(err)) end
         _G.HubIsLoading = false
         if ManualDojoBtn then ManualDojoBtn.Visible = false end
@@ -380,12 +394,9 @@ task.spawn(function()
 
         -- ==========================================
         -- [ 2. MASTERY DRAGON TALON < 500 ]
-        -- Chỉ farm mastery nếu CHƯA có belt nào (Purple/Red/Black)
-        -- Nếu đã có belt = đã qua giai đoạn mastery rồi
         -- ==========================================
         local currentMastery = GetWeaponMastery("Dragon Talon")
 
-        -- Pre-check: có belt nào chưa (quick check không cần full inventory)
         local hasAnyBelt = false
         pcall(function()
             local quickInv = GetInventoryData()
@@ -430,11 +441,7 @@ task.spawn(function()
                     ClearBlackBeltFailed()
 
                     if IsLearnDone() then
-                        -- =============================================
-                        -- ĐÃ HỌC TETHER → CHECK EGG (BƯỚC CUỐI)
-                        -- =============================================
                         if eggCount >= 4 then
-                            -- *** 4/4 DRAGON EGG = HOÀN THÀNH ***
                             ActionStatus.Text = "Hành động: 🎉 ĐÃ ĐỦ 4/4 DRAGON EGG!"
                             ActionStatus.TextColor3 = Color3.fromRGB(0, 255, 0)
                             pcall(function()
@@ -445,9 +452,8 @@ task.spawn(function()
                             end)
                             ActionStatus.Text = "✅ HOÀN THÀNH! File Completed-egg đã ghi. Dừng mọi hoạt động."
                             CURRENT_STATE = "COMPLETED_EGG"
-                            break -- DỪNG VÒNG LẶP → VÔ HIỆU HÓA TẤT CẢ PHASE SAU
+                            break
                         else
-                            -- Chưa đủ 4 Egg → farm Golem
                             if CURRENT_STATE ~= "HUNT_EGG" then
                                 CURRENT_STATE = "HUNT_EGG"
                                 LoadBananaHub("Golem")
@@ -456,9 +462,6 @@ task.spawn(function()
                         end
 
                     else
-                        -- =============================================
-                        -- CHƯA HỌC TETHER
-                        -- =============================================
                         if boneCount >= 3 then
                             CURRENT_STATE = "LEARN_TETHER"
                             ActionStatus.Text = "Hành động: Đủ Belt & Bone! Bay đến Dragon Wizard..."
@@ -484,7 +487,6 @@ task.spawn(function()
                                 end
                             end
                         else
-                            -- Thiếu Bones → farm Golem
                             if CURRENT_STATE ~= "FARM_GOLEM_BONE" then
                                 CURRENT_STATE = "FARM_GOLEM_BONE"
                                 LoadBananaHub("Golem")
@@ -498,7 +500,6 @@ task.spawn(function()
                     -- [ 6. CHƯA CÓ BLACK BELT → FARM DOJO ]
                     -- ==========================================
 
-                    -- Có Red Belt + đủ Bones >= 3 → load Dojo Trainer claim Black
                     if hasRed and boneCount >= 3 then
                         if CURRENT_STATE ~= "FARM_DOJO_CLAIM_BLACK" then
                             CURRENT_STATE = "FARM_DOJO_CLAIM_BLACK"
@@ -506,7 +507,6 @@ task.spawn(function()
                         end
                         ActionStatus.Text = "Hành động: Có Red + 3 Bone → Farm Dojo claim Black Belt..."
 
-                    -- Có Red Belt + thiếu Bones → farm Golem lấy Bones
                     elseif hasRed and boneCount < 3 then
                         if CURRENT_STATE ~= "FARM_GOLEM_FOR_BLACK" then
                             CURRENT_STATE = "FARM_GOLEM_FOR_BLACK"
@@ -514,13 +514,11 @@ task.spawn(function()
                         end
                         ActionStatus.Text = "Hành động: Có Red, thiếu Bone (" .. boneCount .. "/3) → Farm Golem..."
 
-                    -- Có Purple Belt + chưa có Red → farm Dojo để lên Red
                     elseif hasPurple and not hasRed then
                         if CURRENT_STATE ~= "FARM_DOJO_PURPLE_TO_RED" then
                             CURRENT_STATE = "FARM_DOJO_PURPLE_TO_RED"
                             LoadBananaHub("Dojo")
 
-                            -- Bật Terror Shark kill detector (chỉ bật 1 lần)
                             if not getgenv()._terrorSharkDetectorRunning then
                                 getgenv()._terrorSharkDetectorRunning = true
                                 task.spawn(function()
@@ -528,37 +526,31 @@ task.spawn(function()
                                     while getgenv()._terrorSharkDetectorRunning do
                                         task.wait(1)
 
-                                        -- Tự hủy nếu state thay đổi
                                         if CURRENT_STATE ~= "FARM_DOJO_PURPLE_TO_RED" then
                                             getgenv()._terrorSharkDetectorRunning = false
                                             warn("[DracoHub] Terrorshark detector OFF (state changed)")
                                             break
                                         end
 
-                                        -- Tìm Terrorshark trong workspace.Enemies
                                         for _, mob in pairs(workspace.Enemies:GetChildren()) do
                                             if mob.Name == "Terrorshark" and mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") then
                                                 local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
                                                 if not hrp then continue end
 
-                                                -- Check gần mình (đang bị mình đánh = trong tầm attack)
                                                 local dist = (mob.HumanoidRootPart.Position - hrp.Position).Magnitude
                                                 if dist <= 300 then
-                                                    -- Tìm thấy Terrorshark gần mình → theo dõi HP cho đến khi chết
                                                     if ActionStatus then
                                                         ActionStatus.Text = "🦈 Terrorshark gần mình! Đang theo dõi HP..."
                                                         ActionStatus.TextColor3 = Color3.fromRGB(255, 200, 0)
                                                     end
                                                     warn("[DracoHub] Terrorshark found near player, tracking HP...")
 
-                                                    -- Chờ cho đến khi nó chết (HP <= 0 hoặc biến mất)
                                                     repeat
                                                         task.wait(0.5)
                                                     until not mob or not mob.Parent
                                                         or not mob:FindFirstChild("Humanoid")
                                                         or mob.Humanoid.Health <= 0
 
-                                                    -- Terrorshark đã chết bởi mình
                                                     if ActionStatus then
                                                         ActionStatus.Text = "🦈 TERRORSHARK ĐÃ CHẾT! Kick sau 5s..."
                                                         ActionStatus.TextColor3 = Color3.fromRGB(255, 100, 0)
@@ -577,7 +569,6 @@ task.spawn(function()
                         end
                         ActionStatus.Text = "Hành động: Có Purple, chưa có Red → Farm Dojo (+ detect Terrorshark)..."
 
-                    -- Chưa có Purple → farm Dojo từ đầu
                     else
                         if CURRENT_STATE ~= "FARM_DOJO_EARLY" then
                             CURRENT_STATE = "FARM_DOJO_EARLY"
@@ -590,7 +581,6 @@ task.spawn(function()
         end
     end
 
-    -- Sau khi break (hoàn thành hoặc kick)
     if CURRENT_STATE == "COMPLETED_EGG" then
         warn("[DracoHub] === HOÀN THÀNH 4/4 EGG - SCRIPT DỪNG ===")
     end
