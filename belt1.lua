@@ -54,6 +54,30 @@ repeat task.wait() until game.Players.LocalPlayer.Character
 task.wait(2)
 
 -- ==========================================
+-- [ PHẦN 0.5 : CHECK SEA → AUTO TRAVEL SEA 3 ]
+-- ==========================================
+local function CheckSea(seaNum)
+    local ok, result = pcall(function()
+        return seaNum == tonumber(workspace:GetAttribute("MAP"):match("%d+"))
+    end)
+    return ok and result
+end
+
+local CommF_Travel = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommF_")
+
+if CheckSea(1) then
+    warn("[DracoHub] Đang ở Sea 1 → Travel đến Sea 3...")
+    pcall(function() CommF_Travel:InvokeServer("TravelZou") end)
+    return
+elseif CheckSea(2) then
+    warn("[DracoHub] Đang ở Sea 2 → Travel đến Sea 3...")
+    pcall(function() CommF_Travel:InvokeServer("TravelZou") end)
+    return
+else
+    warn("[DracoHub] ✅ Đã ở Sea 3! Tiếp tục script...")
+end
+
+-- ==========================================
 -- [ PHẦN 1 : DRGTL ] LÕI LOGIC (CORE)
 -- ==========================================
 local Player       = game.Players.LocalPlayer
