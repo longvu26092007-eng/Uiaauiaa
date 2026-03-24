@@ -12,7 +12,7 @@ local GuiService = game:GetService("GuiService")
 
 local LocalPlayer = Players.LocalPlayer
 local targetCountMin = 1
-local targetCountMax = 4
+local targetCountMax = 5
 local targetRegion = "Singapore"
 local isHopping = false
 local startTime = tick()
