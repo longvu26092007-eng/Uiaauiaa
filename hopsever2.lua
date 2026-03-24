@@ -1,7 +1,5 @@
 -- ======================================================================
--- DRACO HUNTER V17.0 - V16 SNIPER + KAITUNBOSS FALLBACK HOP
--- Flow: V16 sniper chạy trước (hook + UI + filter region)
---       → 5s không tìm thấy → chạy thêm KaitunBoss GetServers hop
+-- DRACO HUNTER V17.1 - FIX SERVER FULL AUTO RETRY
 -- ======================================================================
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,6 +16,35 @@ local targetCountMax = 4
 local targetRegion = "Singapore"
 local isHopping = false
 local startTime = tick()
+
+-- ==========================================
+-- AUTO CLOSE "SERVER FULL" POPUP
+-- ==========================================
+local function AutoClosePopup()
+    task.spawn(function()
+        while true do
+            task.wait(0.3)
+            pcall(function()
+                -- Đóng popup Error Code 772 (Server is full)
+                local coreGui = game:GetService("CoreGui")
+                for _, gui in pairs(coreGui:GetChildren()) do
+                    for _, obj in pairs(gui:GetDescendants()) do
+                        if (obj:IsA("TextButton") or obj:IsA("TextLabel")) then
+                            local t = tostring(obj.Text)
+                            -- Click nút "Ok" của popup server full
+                            if t == "Ok" or t == "OK" or t == "ok" then
+                                if obj:IsA("TextButton") then
+                                    obj.MouseButton1Click:Fire()
+                                    warn("🔄 [FIX] Tự đóng popup Server Full!")
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+end
 
 -- ==========================================
 -- 1. CLICK REFRESH (từ V16)
@@ -89,7 +116,6 @@ setreadonly(mt, true)
 
 -- ==========================================
 -- 4. KAITUNBOSS HOP (GetServers multi-page)
--- Chạy sau 5s nếu V16 chưa tìm thấy
 -- ==========================================
 local function IfTableHaveIndex(j)
     for _ in j do return true end
@@ -167,14 +193,15 @@ end
 
 -- ==========================================
 -- 5. MAIN PROCESS
--- V16 chạy trước → 5s → KaitunBoss backup
 -- ==========================================
 local function StartProcess()
     print("⏳ Đợi 3s ổn định...")
     task.wait(3)
-    warn("🛰️ DRACO HUNTER V17.0 START")
+    warn("🛰️ DRACO HUNTER V17.1 START")
 
-    -- Mở UI ServerBrowser + nhập region (V16)
+    -- Bật auto close popup ngay từ đầu
+    AutoClosePopup()
+
     local ui = LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("ServerBrowser", 5)
     if ui then
         ui.Enabled = true
@@ -194,7 +221,6 @@ local function StartProcess()
 
     startTime = tick()
 
-    -- V16 loop: gọi remote mỗi 3s + hook bắt response
     task.spawn(function()
         while not isHopping do
             pcall(function()
@@ -207,19 +233,16 @@ local function StartProcess()
             if not isHopping then
                 local elapsed = tick() - startTime
 
-                -- === 5 GIÂY: Chạy KaitunBoss hop song song ===
                 if elapsed >= 5 then
                     warn("⏳ [5s] V16 chưa tìm thấy → Chạy KaitunBoss hop!")
                     task.spawn(function()
                         KaitunBossHop()
                     end)
 
-                    -- Nếu vẫn chưa hop → đợi thêm 5s rồi fallback
                     if not isHopping then
                         task.wait(5)
 
                         if not isHopping then
-                            -- Fallback 10s: Reset UI (V16 style)
                             warn("⏳ [FALLBACK 10s] Reset UI + clear cache...")
                             pcall(function()
                                 if ui then
@@ -231,15 +254,12 @@ local function StartProcess()
                                     if remote then remote:InvokeServer(1, targetRegion) end
                                 end
                             end)
-
-                            -- Clear cache KaitunBoss để scan fresh
                             CachedServers = nil
                             LastServersDataPulled = nil
                             startTime = tick()
                         end
                     end
                 else
-                    -- Chưa tới 5s → click Refresh (V16)
                     if UserInputService.WindowFocused then
                         ClickRefresh()
                     end
@@ -250,15 +270,22 @@ local function StartProcess()
 end
 
 -- ==========================================
--- 6. ERROR HANDLING (từ KaitunBoss)
+-- 6. ERROR HANDLING - FIX SERVER FULL
 -- ==========================================
 TeleportService.TeleportInitFailed:Connect(function(player, teleportResult, message)
     if teleportResult == Enum.TeleportResult.GameFull then
+        warn("⚠ Server full (772) → Reset và retry sau 2s...")
+        -- Reset hoàn toàn để hop tiếp
         isHopping = false
         startTime = tick()
         CachedServers = nil
         LastServersDataPulled = nil
-        warn("⚠ Server full → Retry...")
+        -- Retry ngay sau 2s
+        task.wait(2)
+        if not isHopping then
+            warn("🔄 [RETRY] Server full → KaitunBoss hop lại...")
+            KaitunBossHop()
+        end
     elseif teleportResult == Enum.TeleportResult.IsTeleporting and message:find("previous teleport") then
         StarterGui:SetCore("SendNotification", {Title = "Hop Error", Text = message, Duration = 8})
         task.delay(10, function() game:Shutdown() end)
