@@ -2,7 +2,6 @@
 -- [ KEY CHECK ] — Lấy key từ executor bên ngoài
 -- ==========================================
 local NhapKey = getgenv().Key
-
 if not NhapKey or NhapKey == "" then
     warn("[DracoHub] ❌ Chưa set getgenv().Key ở executor! Hủy script.")
     return
@@ -10,7 +9,7 @@ end
 warn("[DracoHub] ✅ Key nhận được: " .. string.sub(NhapKey, 1, 6) .. "***")
 
 -- ==========================================
--- [ PHẦN 0 : CHỌN TEAM & ĐỢI GAME LOAD ]
+-- [ PHẦN 0 : CHỌN TEAM & ĐỢI GAME LOAD ]  ← ĐÃ TỐI ƯU
 -- ==========================================
 getgenv().Team = getgenv().Team or "Marines"
 getgenv().fragment = getgenv().fragment ~= false and true or false
@@ -19,27 +18,62 @@ if not game:IsLoaded() then game.Loaded:Wait() end
 repeat task.wait() until game.Players.LocalPlayer
 repeat task.wait() until game.Players.LocalPlayer:FindFirstChild("PlayerGui")
 
-if game.Players.LocalPlayer.Team == nil then
-    repeat
-        task.wait()
-        for _, v in pairs(game.Players.LocalPlayer.PlayerGui:GetChildren()) do
-            if string.find(v.Name, "Main") then
-                pcall(function()
-                    local teamBtn = v.ChooseTeam.Container[getgenv().Team].Frame.TextButton
-                    teamBtn.Size     = UDim2.new(0, 10000, 0, 10000)
-                    teamBtn.Position = UDim2.new(-4, 0, -5, 0)
-                    teamBtn.BackgroundTransparency = 1
-                    task.wait(0.5)
-                    game:GetService("VirtualInputManager"):SendMouseButtonEvent(0,0,0,true,game,1)
-                    task.wait(0.05)
-                    game:GetService("VirtualInputManager"):SendMouseButtonEvent(0,0,0,false,game,1)
-                    task.wait(0.05)
-                end)
-            end
+-- ==================== JOIN TEAM TỐI ƯU ====================
+local function JoinTeam()
+    local player = game.Players.LocalPlayer
+    if player.Team ~= nil then
+        warn("[DracoHub] ✅ Đã có team: " .. player.Team.Name)
+        return true
+    end
+
+    warn("[DracoHub] Đang join team:", getgenv().Team)
+
+    -- Cách 1: Dùng Remote (ổn định nhất)
+    local success = pcall(function()
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", getgenv().Team)
+    end)
+
+    if success then
+        warn("[DracoHub] ✅ Join team thành công bằng Remote")
+        task.wait(1.5)
+        return true
+    end
+
+    -- Cách 2: Fallback click UI (an toàn hơn)
+    warn("[DracoHub] Remote thất bại, thử click UI...")
+    repeat task.wait(0.5) until player.PlayerGui:FindFirstChild("Main")
+
+    for _, v in pairs(player.PlayerGui:GetChildren()) do
+        if v.Name:find("Main") and v:FindFirstChild("ChooseTeam") then
+            pcall(function()
+                local container = v.ChooseTeam.Container
+                if container and container:FindFirstChild(getgenv().Team) then
+                    local btn = container[getgenv().Team].Frame.TextButton
+                    
+                    -- Click chính xác theo vị trí thực tế
+                    local vim = game:GetService("VirtualInputManager")
+                    local x = btn.AbsolutePosition.X + btn.AbsoluteSize.X / 2
+                    local y = btn.AbsolutePosition.Y + btn.AbsoluteSize.Y / 2
+                    
+                    vim:SendMouseButtonEvent(x, y, 0, true, game, 1)
+                    task.wait(0.1)
+                    vim:SendMouseButtonEvent(x, y, 0, false, game, 1)
+                    warn("[DracoHub] Đã click button team:", getgenv().Team)
+                end
+            end)
         end
-    until game.Players.LocalPlayer.Team ~= nil and game:IsLoaded()
-    task.wait(3)
+    end
+    task.wait(2)
 end
+
+-- Thực hiện join team
+JoinTeam()
+
+-- Đợi team được set chắc chắn
+repeat task.wait(0.3) until game.Players.LocalPlayer.Team ~= nil
+task.wait(1.5)
+warn("[DracoHub] ✅ Đã join team:", game.Players.LocalPlayer.Team.Name)
+-- ==========================================
 
 repeat task.wait() until game.Players.LocalPlayer.Character
     and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -56,7 +90,6 @@ local function CheckSea(seaNum)
 end
 
 local CommF_Travel = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommF_")
-
 if CheckSea(1) then
     warn("[DracoHub] Đang ở Sea 1 → Travel đến Sea 3...")
     pcall(function() CommF_Travel:InvokeServer("TravelZou") end)
@@ -70,17 +103,16 @@ else
 end
 
 -- ==========================================
--- [ PHẦN 1 ] LÕI LOGIC (CORE)
+-- [ PHẦN 1 ] LÕI LOGIC (CORE)  ← Giữ nguyên từ đây trở xuống
 -- ==========================================
-local Player       = game.Players.LocalPlayer
+local Player = game.Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
-local RunService   = game:GetService("RunService")
-local CoreGui      = game:GetService("CoreGui")
-
-local Uzoth_CFrame  = CFrame.new(5661.898, 1210.877, 863.176)
-local Trade_CFrame  = CFrame.new(-12596.668, 336.671, -7556.832)
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Uzoth_CFrame = CFrame.new(5661.898, 1210.877, 863.176)
+local Trade_CFrame = CFrame.new(-12596.668, 336.671, -7556.832)
 local Wizard_CFrame = CFrame.new(5773.936035, 1209.442871, 809.224548)
-local FRAGMENT_MIN  = 12000
+local FRAGMENT_MIN = 12000
 
 local function GetFragments()
     local val = 0
