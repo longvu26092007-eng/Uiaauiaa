@@ -450,7 +450,7 @@ task.spawn(function()
                                 LoadBananaHub("Golem") 
                             end
                             -- Kiểm tra timeout 25 phút
-                            if eggHuntStartTick and tick() - eggHuntStartTick >= 1500 then
+                            if eggHuntStartTick and tick() - eggHuntStartTick >= 2500 then
                                 warn("[DracoHub] 25 phút farm egg không có thêm trứng → Shutdown game!")
                                 game:Shutdown()
                                 break
@@ -559,12 +559,12 @@ task.spawn(function()
                             end
                         end
                         -- Kiểm tra timeout 25 phút
-                        if purpleDojoStartTick and tick() - purpleDojoStartTick >= 1500 then
+                        if purpleDojoStartTick and tick() - purpleDojoStartTick >= 2500 then
                             warn("[DracoHub] 25 phút farm Dojo Purple-to-Red không progress → Shutdown game!")
                             game:Shutdown()
                             break
                         end
-                        local timeLeft = math.max(0, 1500 - math.floor(tick() - (purpleDojoStartTick or tick())))
+                        local timeLeft = math.max(0, 2500 - math.floor(tick() - (purpleDojoStartTick or tick())))
                         ActionStatus.Text = "Hành động: Có Purple, chưa có Red → Farm Dojo (+ detect Terrorshark)... (" .. timeLeft .. "s)"
                     else
                         if CURRENT_STATE ~= "FARM_DOJO_EARLY" then CURRENT_STATE = "FARM_DOJO_EARLY"; LoadBananaHub("Dojo") end
