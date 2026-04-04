@@ -375,8 +375,8 @@ task.spawn(function()
     local _, startBones = CheckItemInInv(initialInv, "Dinosaur Bones")
     local CURRENT_STATE = "UNKNOWN"
     local claimBlackStartTick = nil
-    local eggHuntStartTick = nil          -- ← Thêm timer cho farm egg
-    local purpleDojoStartTick = nil       -- ← Thêm timer cho farm dojo purple-to-red
+    local eggHuntStartTick = nil
+    local purpleDojoStartTick = nil
     while task.wait(4) do
         -- [ 1. KIỂM TRA FRAGMENT ]
         if getgenv().fragment == true then
@@ -444,18 +444,18 @@ task.spawn(function()
                             CURRENT_STATE = "COMPLETED_EGG"
                             break
                         else
-                            if CURRENT_STATE ~= "HUNT_EGG" then 
+                            if CURRENT_STATE ~= "HUNT_EGG" then
                                 CURRENT_STATE = "HUNT_EGG"
-                                eggHuntStartTick = tick()   -- ← Bắt đầu đếm 25 phút
-                                LoadBananaHub("Golem") 
+                                eggHuntStartTick = tick()
+                                LoadBananaHub("Golem")
                             end
-                            -- Kiểm tra timeout 25 phút
+                            local eggTimeLeft = math.max(0, 2500 - math.floor(tick() - (eggHuntStartTick or tick())))
+                            ActionStatus.Text = "Hành động: Săn Dragon Egg (" .. eggCount .. "/4) (" .. eggTimeLeft .. "s)"
                             if eggHuntStartTick and tick() - eggHuntStartTick >= 2500 then
-                                warn("[DracoHub] 25 phút farm egg không có thêm trứng → Shutdown game!")
+                                warn("[DracoHub] 41 phút 40 giây farm egg không có thêm trứng → Shutdown game!")
                                 game:Shutdown()
                                 break
                             end
-                            ActionStatus.Text = "Hành động: Săn Dragon Egg (" .. eggCount .. "/4)..."
                         end
                     else
                         if boneCount >= 3 then
@@ -485,7 +485,6 @@ task.spawn(function()
                         end
                     end
                 else
-                    -- [ 6. CHƯA CÓ BLACK BELT → FARM DOJO ]
                     local savedBones = GetBlackBeltFailed()
                     local targetBones = savedBones and (savedBones + 3) or 3
                     if hasRed and boneCount >= targetBones then
@@ -523,7 +522,7 @@ task.spawn(function()
                     elseif hasPurple and not hasRed then
                         if CURRENT_STATE ~= "FARM_DOJO_PURPLE_TO_RED" then
                             CURRENT_STATE = "FARM_DOJO_PURPLE_TO_RED"
-                            purpleDojoStartTick = tick()   -- ← Bắt đầu đếm 25 phút
+                            purpleDojoStartTick = tick()
                             LoadBananaHub("Dojo")
                             if not getgenv()._terrorSharkDetectorRunning then
                                 getgenv()._terrorSharkDetectorRunning = true
@@ -558,14 +557,13 @@ task.spawn(function()
                                 end)
                             end
                         end
-                        -- Kiểm tra timeout 25 phút
+                        local purpleTimeLeft = math.max(0, 2500 - math.floor(tick() - (purpleDojoStartTick or tick())))
+                        ActionStatus.Text = "Hành động: Có Purple, chưa có Red → Farm Dojo (+ detect Terrorshark)... (" .. purpleTimeLeft .. "s)"
                         if purpleDojoStartTick and tick() - purpleDojoStartTick >= 2500 then
-                            warn("[DracoHub] 25 phút farm Dojo Purple-to-Red không progress → Shutdown game!")
+                            warn("[DracoHub] 41 phút 40 giây farm Dojo Purple-to-Red không progress → Shutdown game!")
                             game:Shutdown()
                             break
                         end
-                        local timeLeft = math.max(0, 2500 - math.floor(tick() - (purpleDojoStartTick or tick())))
-                        ActionStatus.Text = "Hành động: Có Purple, chưa có Red → Farm Dojo (+ detect Terrorshark)... (" .. timeLeft .. "s)"
                     else
                         if CURRENT_STATE ~= "FARM_DOJO_EARLY" then CURRENT_STATE = "FARM_DOJO_EARLY"; LoadBananaHub("Dojo") end
                         ActionStatus.Text = "Hành động: Đang cày Belt tại Dojo..."
