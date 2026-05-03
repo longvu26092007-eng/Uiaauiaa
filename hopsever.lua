@@ -18,7 +18,7 @@ local JobId       = game.JobId
 -- CẤU HÌNH HOP (CHỈNH Ở ĐÂY)
 -- ==========================================
 local HOP_CONFIG = {
-    MaxPlayers    = 4,       -- Chỉ hop vào server < 5 người (đặt nil để bỏ qua)
+    MaxPlayers    = 3,       -- Chỉ hop vào server < 5 người (đặt nil để bỏ qua)
     ForcedRegion  = nil,     -- Ép region, VD: "US", "EU", "AP" (đặt nil để bỏ qua)
     MaxRetries    = 10,      -- Số lần thử tối đa khi không tìm được server phù hợp
     RetryDelay    = 1,       -- Giây chờ giữa mỗi lần thử
