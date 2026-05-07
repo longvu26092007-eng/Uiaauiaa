@@ -1,60 +1,72 @@
 -- ==========================================
--- [ KHỞI TẠO NHANH & CHỐNG LOAD TRÙNG ]
+-- [ KEY CHECK ] — Lấy key từ executor bên ngoài
 -- ==========================================
-if _G.DracoHubExecuted then 
-    warn("[DracoHub] ⚠️ Script đã chạy rồi, không load lại!") 
-    return 
-end
-_G.DracoHubExecuted = true
-
--- Lấy key
 local NhapKey = getgenv().Key
 if not NhapKey or NhapKey == "" then
-    warn("[DracoHub] ❌ Thiếu Key! Hủy script.")
+    warn("[DracoHub] ❌ Chưa set getgenv().Key ở executor! Hủy script.")
     return
 end
-
--- Bỏ qua đợi game:IsLoaded() nếu muốn chạy ngay lập tức
--- Chỉ giữ lại các check tối thiểu để không lỗi CFrame
-local Player = game:GetService("Players").LocalPlayer or game:GetService("Players").PlayerAdded:Wait()
+warn("[DracoHub] ✅ Key nhận được: " .. string.sub(NhapKey, 1, 6) .. "***")
 
 -- ==========================================
--- [ PHẦN 0 : JOIN TEAM SIÊU TỐC ]
+-- [ PHẦN 0 : CHỌN TEAM & ĐỢI GAME LOAD ] — TỐI ƯU CHỐNG TREO
 -- ==========================================
 getgenv().Team = getgenv().Team or "Marines"
 getgenv().fragment = getgenv().fragment ~= false and true or false
 
-local function FastJoin()
-    -- Thử dùng Remote trước (Nhanh nhất)
-    pcall(function()
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", getgenv().Team)
-    end)
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+-- Đợi Player và dữ liệu cơ bản
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+repeat task.wait() until Player
+
+-- Hàm Join Team tối ưu
+local function JoinTeam()
+    if Player.Team ~= nil then return true end
     
-    -- Nếu sau 1s vẫn chưa có team thì mới thử click UI
-    task.delay(1, function()
-        if Player.Team == nil then
-            pcall(function()
-                local mainGui = Player:WaitForChild("PlayerGui"):FindFirstChild("Main")
-                if mainGui and mainGui:FindFirstChild("ChooseTeam") then
-                    local btn = mainGui.ChooseTeam.Container[getgenv().Team].Frame.TextButton
-                    game:GetService("VirtualInputManager"):SendMouseButtonEvent(
-                        btn.AbsolutePosition.X + btn.AbsoluteSize.X/2,
-                        btn.AbsolutePosition.Y + btn.AbsoluteSize.Y/2,
-                        0, true, game, 1
-                    )
-                    task.wait(0.1)
-                    game:GetService("VirtualInputManager"):SendMouseButtonEvent(
-                        btn.AbsolutePosition.X + btn.AbsoluteSize.X/2,
-                        btn.AbsolutePosition.Y + btn.AbsoluteSize.Y/2,
-                        0, false, game, 1
-                    )
-                end
-            end)
+    local CommF = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommF_", 10)
+    if CommF then
+        pcall(function()
+            CommF:InvokeServer("SetTeam", getgenv().Team)
+        end)
+    end
+    
+    -- Nếu InvokeServer không xong ngay, thử đợi thêm 1 chút
+    local t = tick()
+    while Player.Team == nil and (tick() - t) < 10 do
+        task.wait(0.5)
+        -- Kiểm tra UI nếu Remote không hoạt động
+        local MainUI = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("Main")
+        if MainUI and MainUI:FindFirstChild("ChooseTeam") then
+            local container = MainUI.ChooseTeam:FindFirstChild("Container")
+            if container and container:FindFirstChild(getgenv().Team) then
+                local btn = container[getgenv().Team].Frame.TextButton
+                local x = btn.AbsolutePosition.X + btn.AbsoluteSize.X / 2
+                local y = btn.AbsolutePosition.Y + btn.AbsoluteSize.Y / 2
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(x, y, 0, true, game, 1)
+                task.wait(0.1)
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(x, y, 0, false, game, 1)
+            end
         end
-    end)
+    end
 end
 
-if Player.Team == nil then FastJoin() end
+-- Chạy JoinTeam trong luồng riêng để không chặn script
+task.spawn(JoinTeam)
+
+-- Chỉ đợi tối đa 15s cho phần Team, sau đó bắt buộc chạy tiếp logic
+local waitStart = tick()
+repeat task.wait(0.5) until (Player.Team ~= nil) or (tick() - waitStart > 15)
+
+warn("[DracoHub] ✅ Tiếp tục thực thi logic chính...")
+
+-- Đợi Character để đảm bảo các hàm Tween/Teleport hoạt động
+if not Player.Character or not Player.Character:FindFirstChild("HumanoidRootPart") then
+    Player.CharacterAdded:Wait()
+end
+repeat task.wait() until Player.Character:FindFirstChild("HumanoidRootPart")
+task.wait(1)
 
 -- ==========================================
 -- [ PHẦN 0.5 : CHECK SEA ]
