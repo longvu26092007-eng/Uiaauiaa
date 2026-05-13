@@ -1,5 +1,5 @@
 -- =============================================================
--- DRACO ANTI-STALKER V15.5 - FULL NEW BLACKLIST UPDATED
+-- DRACO ANTI-STALKER V15.5 - FULL NEW BLACKLIST REPLACEMENT
 -- =============================================================
 repeat task.wait() until game:IsLoaded()
 repeat task.wait() until game.Players and game.Players.LocalPlayer
@@ -41,69 +41,69 @@ repeat task.wait() until LocalPlayer.Character
     and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 
 -- ==========================================
--- [ PHẦN 1 ] DANH SÁCH BLACKLIST MỚI
+-- [ PHẦN 1 ] DANH SÁCH BLACKLIST MỚI NHẤT
 -- ==========================================
 local RawBlacklist = {
-    "ReneeCortez222", "CraigBerry1", "KatelynHolmes1524", "CourtneySteele1797", "MarisaMata8243",
-    "ErinWilliamson78", "NicholeDorsey52", "DarrellMorales673", "JohnStanley53611", "SheliaGreen4",
-    "AustinLyons2404", "JuniperMata5", "RavenZeroGamer2006", "JessicaRose615", "KlaasrMadon2006",
-    "AngelicaTrevino582", "SharonLucas982", "SherriMclean1273", "LindseyBlevins61", "MarieCurry886",
-    "Noah_Ban315", "RhondaLe06", "RebekahOrtiz31", "MistyMaldonado7389", "AlecCopeland99",
-    "DianeYang5753", "FloweredGold8", "CaitlynRitter0189", "Derek_Grant95", "Clear_Admin563552",
-    "LoriWinters102", "RileyKeller24352", "RebeccaBarajas485", "KentGarcia7847", "DianeBronze81",
-    "AntonioDay13", "CrystalOsborne00131", "OwenViperLight201783", "CherylMcconnell2", "MarvinRose45",
-    "Atto_Neck376778", "CarolynMoreno274", "BillyNewton0433", "LisaBailey70525", "MeghanOrange5",
-    "BonnieVincent7850", "MarilynBonilla443", "ZacharyCharles753", "ShannonDavis3909", "XavierSapphire5",
-    "IanMiranda321", "MariaFerguson676", "KaylaBanana13", "AshleyBerger8650", "DorisMejia903",
-    "Charl0tteStealth90", "ErnestSnow79554", "CactusSalinas58", "BrooklynnSkater20122", "ReneeDark520",
-    "PigletMorton3", "LaurieCarson1537", "LindsayKramer3", "NeilKnight68292", "KariHuang74939",
-    "PatrickGold0", "JamesChristian7362", "SharonDalton4891", "YvetteDonovan3713", "GaryMejia5443",
-    "ReginaLucas0281", "KarenLutz96", "BunnyStafford1", "PamelaZavala41380", "JudyGuerra9",
-    "JulianFrazier16", "EricaWright22967", "RileyParker146", "MackenzieHickman33", "TammyNavarro7449",
-    "MathewWard86188", "GoldBaron786386", "ZacharyArroyo97984", "CharlotteCasey1", "BlossomJennings856",
-    "JasminAyala5248", "GlendaGoodwin3108", "DeannaShepard62244", "LynnBranch4657", "NicolasHubbard2001",
-    "GammaSamurai362792", "ColleenMcknight76468", "XxShadowMinerxX38", "HarperC00kieEch02002", "BettyJacobson19822",
-    "BrandonWatkins79107", "SlothHarrington72328", "JeromePeriwinkle3643", "KatrinaMunoz3145", "DillonBuckley3627",
-    "JudithHumphrey2", "NicoleGolden431", "RichardTownsend11404", "KerriCooke31", "XxEmmaS0nicxX71",
-    "RogueLightStar2013", "JasminWhite13612", "MadelineCarr3", "AsherHyper35YT", "DamonRainbow7",
-    "LaurieYang215", "MeredithOneal889", "CharleneRiddle498", "Z0eBladeRift2011", "GlennLogan832",
-    "PlantedMckee53318", "XxJulianLuckySonicxX", "PicoRacer365921", "ArielRollins04", "ShaunHenderson46",
-    "BryanWalsh9866", "Li0nRider200498", "Super_Fox86993", "LorettaFinley38", "ColtonJacobs2",
-    "GabrielMcgee19", "DawnBallard44710", "WarrenOwen38571", "NormaCarey50", "RuthPeterson6624",
-    "CarlaApricot37404", "WarrenRowland67796", "AngieGomez9033", "R0ng_Hug02007", "NiceEar907783",
-    "PigHenry115", "VanessaJordan7166", "HaoAidenFreya", "LeeMcbride9728", "KimberlyHoover351",
-    "KerryGates50540", "XxFoxPlayzBearxXYT", "JanetShields1416", "LarryWilliamson1232", "LeahVelazquez709",
-    "KristenRogers042", "KatherineTerry91865", "RonnieMahoney35502", "PurrNunez853", "DeanMcbride490",
-    "JorgeShannon071", "ClaireCurtis806", "SonyaGuzman24097", "BlazeGlitchDragon42", "EliteRobot620607",
-    "DorothyBennett3", "ReginaPark951", "RickyPearson37552", "Turbo_Prism200351", "TamiLozano7511",
-    "AimeeBartlett5073", "Skater_Circuit50", "PhillipParrish35", "CodeSparklyLucky2010", "CherylColeman00",
-    "Odd_Prince323328", "JillianBarr5", "LindseyBradshaw51674", "ChloeRogers7495", "AngelicaJordan95148",
-    "JoelWeiss481", "BillyMorris453", "Chrono_Sky201790", "BrentCalderon439", "FeliciaWood5174",
-    "GloriaMccormick44899", "BoBrettChristopher", "WayneSnow6664", "Lucky_Fox401822", "Sab3rStarryCyb3r2010",
-    "LouisMccoy8551", "BethStrawberry55578", "PhillipKeller05179", "KaitlynMacdonald1", "PrestonDunlap2597",
-    "PlantedMcguire9875", "AzaleaShah7176", "NathanBarker3651", "RussellMauve5483", "KelliMoreno5",
-    "BrianaCervantes74477", "NeonInfernoCraft2007", "DarleneGillespie3236", "RebekahCarlson89052", "HenryGreene4103",
-    "ClaytonHenry04553", "StaceyBlackburn99", "ClarenceBuck2581", "MaryGardner0", "MyriamEvers02",
-    "PamelaWeber848", "BarryLe24", "GloriaBerger6524", "VissStefanie2002", "DaltonMullen7562",
-    "KatrinaMcmahon58", "CathyGallegos191", "SamuelOsborn5", "LaceyLopez12944", "ColleenCrane87117",
-    "BradleyKeith1", "DouglasPantone00", "CesarCruz598", "Orbit_Lucky28", "KarenWhite74555",
-    "HaileyRoberson52571", "BrookeFoley133", "LeeAndersen32401", "JackMcbride56", "CherylVazquez401",
-    "PrimalRiftHaze200780", "S0phiaLuckyHyper2013", "ErinLyons25235", "DuaneMatthews4238", "DylanMccarty7951",
-    "XxElla_StarryxX20078", "JacobLewis2627", "BernardOlive39", "BrittneyDudley66327", "CarlaWoodward984",
-    "SquirrelGraham592", "AshleeCalhoun1", "HunterLavender86", "KurtWalton9802", "StaceyPaul85374",
-    "AntonioOwens392", "Haz3Cyb3r201280", "SamuelZeroDuck51", "MarioDiaz89000", "RobertoShaffer268",
-    "ShelbyOdom7222", "StanleyHanson33", "SlothCarlson7396", "GardenEsparza2031", "RobertCallahan4771",
-    "LouisEcru25563", "JudyReed22148", "ZeroPulse201789", "MeghanMcpherson67", "Gabri3l_Dark10",
-    "Loud_Dew349264", "SpencerAlvarado00", "EthanSharp360", "TroyMora19", "WillieHuynh476",
-    "MauriceDodson78363", "HeatherCotton1086", "SherryRay00", "BaileyTeagreen20607", "ErnestYang7423",
-    "GloriaCarlson3436", "KathleenPetersen332", "CoryGutierrez3", "GlendaOlson9", "LarryCoffey9436",
-    "AnneHurst3", "FrogHebert743", "JaniceReid8159", "HunterStarrySparkly7", "ArthurAtkins332",
-    "RonnieHays83728", "XavierCmyk3", "ReneeWright9342", "JaniceRitter3367", "GiantToe178650",
-    "ScottFerrell811", "XxAur0raClawxX2015", "VictorCrosby26774", "XxLiamGamerxX62", "AttoMane536672",
-    "ArianaHammond363", "NormanKing41342", "RuthRyan53402", "CameronPadilla9153", "JasmineFaulkner66",
-    "DannyDorothy2018", "BruceAlmond1", "JoannWebb17", "AndrewVargas1922", "Azure_Gem274098",
-    "Ev3lynByt3Drag0n2017", "KristinaFrazier667", "SusanWalton7091", "KathrynAustin4361", "BenjaminBurton2257",
-    "MaureenCarr784", "GaryYork15", "GeorgeNorton64", "WalterMathis09", "SylviaBurnett72447"
+    "Drift_Sky6485", "SylviaArmstrong30792", "VantahCRaveny184790", "ShirleyRich329", "JoannCollins5892",
+    "KatrinaCollins45553", "LeeChandler45", "MandyBuck81471", "XxHazelEpicxX85", "XxNoraMaxxX31",
+    "Ethan_B3AST61", "Br00klynnFlick2009YT", "EmilyPh0enix9390", "AnthonyCore6431", "Br00klynn_ST0RMY58",
+    "LukeBlush15", "JanetMcneil612", "ShirleyLevy85", "XX_Am3liaC00ki3Night", "ShelbyPennington35",
+    "IsaacSparklyWraith23", "BrandiJordan1810", "MarcusLeblanc90", "TheresaLee232", "LeahHiggins2248",
+    "RubenYellow06", "HendriCharlie99", "PamelaStokes82", "XxElijahEch0OmegaxX", "XXSAVANNAH_RiderxX40",
+    "NeilRich843", "Aisha_Chill7280", "CraftGlitchCraze2007", "ConnieMejia3", "EvanChase7",
+    "JulieRomero105", "TwilighturPixelP1758", "TjallingGeerte2000", "MichelleFarrell85737", "BalqisC3l3stial7523",
+    "JellySaberChaos2024", "TraciCarr915", "GaryReid5", "ShirleyShea6", "LuckyCraftSkater2013",
+    "ChadCooke082", "HannahGigaPho3nix202", "RobynDeleon7", "NanneDirke03", "L0uis_R0gue4443",
+    "YolandaJennings10", "AnthonyRussell6674", "ErinMiddleton9", "BeeBaldwin1893", "TanyaBenjamin8247",
+    "Xx_SparkPhoenixSlime", "UltraAlphaDrift2011", "ToniDominguez2047", "Charl0tteSkater58", "Xz_GLITCHMGCRAZ3TGEC",
+    "HarperAquaIce2024", "ScarlettArrowRocket9", "MalikHull718", "LuisFitzgerald752", "JillianCotton76",
+    "NeonHero202416", "BradleyHobbs263", "RaoulRuite98", "KristiCarney08", "DerekAndersen67606",
+    "JoeUnderwood4360", "ThomasReynolds4178", "EthanAceSparkly20063", "EbonyCarter6", "Wraith_Eagl3201293",
+    "XxDawnCircuitFrostxX", "StormVoid201819", "JanicePrice41616", "RebekahKrause5", "MarioHawkins58251",
+    "Xx_VictoriaBlastSkat", "DawnGalaxy201564", "R0gueRider5857", "XxHazel_DuckxX25", "JonVelazquez20085",
+    "Shad0wSilverAce2002", "ColleenBerry830", "VictoriaBaker188", "WilliamHarper5304", "JenniferRoman873",
+    "LawrenceDuran74166", "KyleLinen94643", "BeastRiftSt0rm2003", "TrevorHughes76961", "AlexisShepard4",
+    "LoriKing1391", "LarryHuffman25622", "RonnieSullivan75426", "MelanieSingleton17", "XxAm3liaByt3xX63",
+    "NatashaMullen75", "ShawnKoch0855", "SilverBlast200463", "KlaaseDongxue06", "CalebLong7205",
+    "DeannaVincent521", "CactiPeck45994", "AshleyBautista84831", "ReginaldRussell82429", "XxChillC00kiexX2013",
+    "BearyPace6491", "TamiDominguez10", "KarlMorse3528", "PhillipKnight27", "XxZer0_S0nicxX200431",
+    "ButterflyPantone1129", "MelissaSeashell80643", "TamaraColeman3675", "HawkHunter5347", "Emma_Pho3nix201339",
+    "Claw_Bl0ck34", "CodyJohnston35102", "ClydeWille00", "SparkPhoenixAqua29", "MonicaWeber64",
+    "FabrenBoudewijn97", "Zo3Sky37", "ClaytonVelasquez59", "MaxLionGalaxy2005", "RoseMarks2",
+    "CheyenneCarr625", "Bacon_Miner61", "BaneRiftNova71", "QuintenZoey1999", "AustinSellers222",
+    "LuisBush0540", "GilbertRiggs1713", "JayKaufman6979", "GailClayton10301", "DarrenSullivan461",
+    "BriannaSutton60", "GabriellaPotts2", "QU33N_Dark32", "Byte_Nebulon4396", "StefanieMorgan2702",
+    "WalterGonzales50918", "KristinaHickman7050", "JorisLex2004", "BethPitts55", "VickieRosales54823",
+    "Charlott3PlayzKing20", "TanyaBenton4", "LydiaJohnston0648", "TimothyWilliams116", "Cooki3_Starry82",
+    "DeanWalters32076", "BrianCunningham3997", "BrookeNorton22", "SaberPrimal201283", "ShawnJordan2503",
+    "KentHarrington62616", "SonyaBridges4", "Luk3Inf3rno51", "LoganCooki321", "V0rtexDawn28",
+    "PlayzNe0n202052", "DahyunWill95", "G0ld3nB3ast25", "MatthewDunlap5079", "Sami_Void3946",
+    "ZapTurboSky2012", "eluTigerSilverCore", "TannerCream5670", "XxEch0Li0nTigerxX", "XxLaylaBanexX65",
+    "H3roChas390", "XxPix3lL3g3ndxX79", "GregRose05", "ReginaHernandez52008", "KathrynGolden4",
+    "AndreaHoward47197", "PamMason71914", "ViralCtMiragea111294", "ShaunHamilton87156", "NeilMason5493",
+    "XxDanielWolfFlashxX2", "SheriVelasquez686", "Aid3nSonicAc3", "RussellLowery519", "Rabab_M3cha4478",
+    "CarolynDodson5973", "MercedesRoy46", "Xx_CHARL0TTEWRAITHFL", "PowerHazeRocket22", "Charl0tt3GlitchWrait",
+    "PhilipLion9680", "FabrMel2003", "TamaraMeyer39", "RitaWaters6", "Qu33nLight96",
+    "ScottButler114", "Inf3rno_Playz37", "FlameLegendMystic33", "AaronPowell913", "SelenaNelson6811",
+    "LatashaDuncan96281", "LindaFreeman4", "Aur0ra_C0re9807", "BuilderSaber9707", "HunterWebb3771",
+    "YolandaReid485", "Abdul_EchoRunner4780", "PlantKnapp67", "KristenPotts534", "SherryAndersen42",
+    "Pho3nixOrbitEagl388", "JerryCampbell8339", "ParkerMcmillan83328", "ParkerOdom20659", "MeredithNunez7703",
+    "AceMagicOrbit2004", "DerekMooney15933", "BlossomingNguyen0039", "LeroyBuckley3248", "LegendStarryCraft77",
+    "RichardBishop06", "VeronicaMadden6667", "FlowersPerez636", "CynthiaMalone63576", "XxLaylaEagleClawxX",
+    "XXSPARK_IcexX97", "VortexFireRider2017", "CalvinSage6", "TracieSnow12246", "XxS0phiaRiftViperxX",
+    "CraigHowell04508", "IsaacDaniels9492", "Harp3rBuild3r201191", "RandyBurch1705", "MarcusWarner0200",
+    "DerekRandall083", "StacieVance066", "WraithRocketRider24", "TomObrien0", "BrandonHenderson2290",
+    "MorganErickson132", "AlexanderEspinoza414", "LubnaLegend2099", "AllisonBranch58", "NicoleSellers99125",
+    "SierraRobles2289", "LukeSimmons095", "CollinKing951", "BaneSkyDrift2021", "EllieShad0wN0va",
+    "JoshuaCaldwell68429", "Pix3lV3n0mOrbit2017", "GabrielEch049", "JAXONMOONPHOENIX_YT", "GilbertPetty020",
+    "VictoriaLarsen216", "IguanaPowell481", "MaryLarsen04", "EwoudZwanu01", "RandyBridges3477",
+    "SebastianHazeStarry5", "AdrianRangel6241", "MelindaValentine9988", "natalieAuric4497", "CheyenneBlack6",
+    "IceEagleShadow2004", "BlizzardtLDancersLCo", "MiaToxicVenom49", "SierraCollins13899", "WendyYork28294",
+    "ByteCookieSparkly95", "PrismPowerCraze2016", "ThomasWiley45899", "DawnHiggins16183", "LanceBrown05",
+    "JoanAlvarez86538", "Chlo3B3arCraz32009", "DeannaMcdaniel54842", "TommyBurgess17", "XxJax0nArr0wBlizzard",
+    "StevePale1524", "JasmineCampbell551", "VioletRodgers7", "PatriciaPatel2508", "PixelFrostRaven2009",
+    "AlyssaBeard0", "AngelicaThompson2230", "XxWolfStreamPixelxX", "ShannonSpears96", "AlanPlum7533",
+    "SallyKemp7655", "JennaMcdonald1210", "Her0Bac0n48", "Jacks0nFr0st66", "ErikaHicks57553"
 }
 
 local BlacklistMap = {}
@@ -112,7 +112,7 @@ for _, name in ipairs(RawBlacklist) do
 end
 
 -- ==========================================
--- [ PHẦN 2 ] UI + LOGIC
+-- [ PHẦN 2 ] UI + LOGIC ĐỔI SERVER
 -- ==========================================
 local HopScriptURL = "https://raw.githubusercontent.com/longvu26092007-eng/Uiaauiaa/refs/heads/main/hopsever.lua"
 local SafeGuiParent = pcall(function() return gethui() end) and gethui()
@@ -136,7 +136,7 @@ Instance.new("UICorner", MiniFrame)
 local Status = Instance.new("TextLabel", MiniFrame)
 Status.Size = UDim2.new(1, 0, 1, 0)
 Status.BackgroundTransparency = 1
-Status.Text = "✅ Team: " .. getgenv().Team .. " | Đang quét..."
+Status.Text = "✅ Đang quét: " .. getgenv().Team
 Status.TextColor3 = Color3.new(1, 1, 1)
 Status.Font = Enum.Font.GothamBold
 Status.TextSize = 11
