@@ -1,5 +1,5 @@
 -- =============================================================
--- DRACO ANTI-STALKER V15.5 - FULL NEW BLACKLIST REPLACEMENT
+-- DRACO ANTI-STALKER V15.6 - FULL NEW BLACKLIST REPLACEMENT
 -- =============================================================
 repeat task.wait() until game:IsLoaded()
 repeat task.wait() until game.Players and game.Players.LocalPlayer
@@ -44,6 +44,7 @@ repeat task.wait() until LocalPlayer.Character
 -- [ PHẦN 1 ] DANH SÁCH BLACKLIST MỚI NHẤT
 -- ==========================================
 local RawBlacklist = {
+    -- === CŨ ===
     "oreportx8", "ObliviontZThunderW18", "CelestialzPStreamC", "Fr0stbiteTySilverp18", "ShadedmFusi0nR186822",
     "FallenDsCrystalw35", "ScythesaGhostd156571", "DianaRoberson46836", "Builderx3Skatert3Hol", "XzStorm97Darkh7Synth",
     "1classy7", "Mystic7YDragonH11432", "Xz_LuckygbEch0BladeL", "XzNeonmEWolfbzX1849", "DarkkZBlizzardK10952",
@@ -103,7 +104,48 @@ local RawBlacklist = {
     "StreamQ8Hunter28Byte", "DancerSUHazeQ1259", "StormmdWolfA187697", "Xz_RumblekNEpicJNSpa", "GlitchszFire2151530",
     "V0rt3xCAShr3d51964", "DebbieCook679", "XzMysticEQTitanizX15", "Neon9BRift5168716", "BuilderaaGalaxyr1516",
     "HaileyRamos8313", "EchoBladeYcDarkd1774", "PlayzJHShift3rN12289", "Xz_Neonz3NebulaC3Tur", "Xz_ECHOXDXV3NATORHXN",
-    "AlphaqfChaseK13", "XzGlid3IPR0ck3ttzX11", "LaurieButler6", "ByteStormKVMagic2125", "WraithsFTigerl187546"
+    "AlphaqfChaseK13", "XzGlid3IPR0ck3ttzX11", "LaurieButler6", "ByteStormKVMagic2125", "WraithsFTigerl187546",
+    -- === MỚI ===
+    "N0ra_Drag0n201468", "Thund3rNinjaV0id", "Vort3x_Sonic15", "XZ_Pix3lat3dlWAlphaQ", "JellyCodeNova2011",
+    "MegaFintanFan768", "BlazejpMagicapBac0n1", "JasminHill81850", "xf7tGlitchOrbitLive", "YanSande97",
+    "Stormj8Venom3", "SparklyqfD3ltaA53", "Fox0HStealthc", "DuckV7Smashy109391", "PrismNAC0deY174610",
+    "NhanEvers05", "RocketzBPro3BFury193", "EpicGJGlidea1033", "SophiaGigaFox2024", "Aqua_Prism7907",
+    "DriftViperHer0", "BearISMoonH130952", "UptonPrescott276", "Ic3avGhost3101611", "WarpA3th3rRunn3r726",
+    "HyperMystic201875", "cxnDarkWolf", "EchoBladeSUWarden610", "CrazeeyWraithWyThund", "CoreijFuryb",
+    "Gh0stMlSlimek1530", "HendrikDejon95", "GalaxyWmArrow9171210", "M0unir_Hunter6806", "AquaQ9HeroO15",
+    "XxByteStealthxX89", "BlizzardelSilverT112", "Crypt1hFrostbiteS21", "DuckCraft200259", "Warp0ZLi0nr",
+    "Craze7gSaberE113165", "C00kieViperDrag0n200", "WraithfZPrism5ZBacon", "ZapzBUltra7136429", "JunhuiBeensl99",
+    "AydenBuilder9072", "B3astMagicL3g3nd", "VortexgGFlame793", "NaotoBaarsu09", "7ov_Cry5talV1per8363",
+    "DarkwJBlizzardr18033", "ChaoscSSkat3r0SPro64", "XzRocketDsStealth6sC", "XxHarperDawnxX2004_Y", "QuintonCanh2003",
+    "KuipurMasaru98", "GabrielCrystalHero20", "PoohChung6075", "Snip3r2sMagicf114188", "Kinsley_Code8833",
+    "PatriciaWhite48447", "LavaClawFlash12", "HuyOomenn03", "Wolfk3BlitzE158567", "ReneeJennings557",
+    "Skyu0Sparky127237", "JadeJimenez88725", "Rawan_FuryX7334", "MarkThomas45037", "JulieHayes853",
+    "IsabellaLegendFlick8", "IsaacToxicEcho2010", "MaxSlimeHunter2008", "BytenNPixelatedi1730", "RavenMagicFire2019",
+    "Ev3lynDuck24", "XxZoePandaChillxX201", "ThongchanDejono04", "SamuelChaseProYT", "JonathonAnthony92",
+    "GalaxyUltraPr0200698", "RuitenMats2003", "HollowAiRuneviQueen1", "StarBlazePixel31", "QueenDrag0nLi0n",
+    "LuckynxFoxGxRift1029", "XzEchoXrHQueenZzX113", "Star6VGlideZ", "SebastianZenith6503", "NightTurboChill2003",
+    "VoidFxShifter71609", "AbigailCrazeIce20045", "Rocketi4Duste44", "EzraFuryX560", "B3ast5iPrimalm127932",
+    "Xz_Ghost2qSparkXqEch", "Xz_TechnopISynth6IEc", "Julia_Min3r7231", "OmegaKing202034", "DalalFusion3934",
+    "ytt3_Hyp3rT1gerAlt", "Hypern8SnareI1505", "XzTitanD5GlideAzX177", "PrimalvHWarpPHRune", "Xz_TwilightLAStealth",
+    "5m0CodeAqua8767", "OrbitN30nSlim389", "XxMat3oZapxX2002", "Fusioni9Vip3rc117583", "sl1_IceLionOP",
+    "BearIce3944", "wl9HazeKingAlt5316", "Heather_Specter3015", "NoahStorm200566", "Zeros7Prismv152636",
+    "BuilderAONight889", "Xz_Snare9ZFrostbiteJ", "Alpha9ADriftH1804", "Starry6pQuantumm45", "ThundereKMysticIKFro",
+    "MagicIceTurbo2018", "VioletMaynard270", "AlphaFenwick955", "GlitchEcho200235", "ViralyhHerot108813",
+    "XxNovaZeroxX41", "PixelEcho202330", "FireBlock201699", "XzNightSCScythefCBui", "XzTwilightAiBlazeIiA",
+    "Shifter9UHunterF", "XzGigazVSwitch6zX154", "WoutAarton2006", "BoerAnnet2002", "Sheldonauk772",
+    "WolfBlock200854", "RoverPeters08", "zk5BlazeToxicXD6929", "XzBane6AAce2zX1677", "HazelVortexDancer36",
+    "Micha3lSilv3r200915", "Xz_LavayWTurbomWToxi", "CrazeStealth201910", "Golden_Sable809", "AidenS0nic72",
+    "XxNinjaV0idStarxX201", "Cyber_Drift35", "BuilderSjScythej1087", "Lucas_Pow3r35", "SoljiHagena2005",
+    "GigaPanda9607", "ZwanorSaskia07", "AprilKuipel2002", "AubreyTurb0Raven51", "CrimsonzHEpic454",
+    "92g_StealthPrismAlt", "VantasRBacon61526", "5ueGoldenLava3284", "xl13_AceUltraXD6454", "vngFalconKingXD5509",
+    "qa8DarkBy735592", "Hunter_Shade5840", "ErikaMadden89", "RyanTitan7573", "PixelBlastUltra2019",
+    "ZapGam3rZ3ro", "BlockSonicCrystal48", "WolflMMysticp145258", "FrostnfNovaF1048", "XzPlayzhnHer0OzX1408",
+    "RiftS9Cyberu126815", "OrbitEbSkyZ1978", "Owen_Rogue82", "XzSniperMuStarPuLege", "RumbleJmBlizzardumTu",
+    "Galaxyk1Twilightr110", "Xz_Nova7cShadelcGlid", "WolfGXEpick182993", "InfernoUltra201185", "Xz_AlphavHHerodHCore",
+    "MoonA7Max71817", "XZ_Ph0enix4ZSt0rmzZB", "XzVenatorEAFrostbite", "Bacon36Ward3n2189814", "Xz_BLOCKT0RUMBL320CR",
+    "Stealthp9Playz91455", "Xz_StarryPcNovaCored", "TurboqTCraftYTScythe", "V0rtexsbRiderVbKing1", "WolfJelly201689",
+    "XzRogueQOSaberUzX150", "Dawn6WCrystalf160627", "JansorMats10", "JamesDragonHero28", "XxG0ldenN0vaxX202056",
+    "NovaLyPixelatedy", "QuantumYEGlitcho1370", "DirkAarten2006", "IceStream3743", "IvenFang2006",
 }
 
 local BlacklistMap = {}
