@@ -262,12 +262,13 @@ end)
 -- ============================================================
 -- BỘ CÔNG CỤ XỬ LÝ INVENTORY (CẬP NHẬT MỚI - HỖ TRỢ MIRROR FRACTAL)
 -- Sử dụng ItemReplicationService thay vì CommF_ getInventory
+-- FIXED: Đúng pattern như PullLever (không raise identity khi require)
 -- ============================================================
 local _invFailCount = 0
 local ConChoChisiti36 = { Backpack = {} }
 
 -- ============================================================
--- THREAD IDENTITY - Để tránh lỗi khi require module game
+-- THREAD IDENTITY - Để tránh lỗi khi ĐỌC DỮ LIỆU inventory
 -- ============================================================
 local _setidentity = setthreadidentity or setidentity or set_thread_identity or (syn and syn.set_thread_identity)
 local _getidentity = getthreadidentity or getidentity or get_thread_identity or (syn and syn.get_thread_identity)
@@ -289,112 +290,28 @@ local function RestoreIdentity(prev)
 end
 
 -- ============================================================
--- INVENTORY MODULES - Load từ game
+-- INVENTORY MODULES - Require trực tiếp (KHÔNG raise identity)
 -- ============================================================
-local InvModules = {
-    Inventory   = nil,
-    ItemConfig  = nil,
-    ItemService = nil,
-    KEYS        = nil,
-    Ready       = false,
-}
-
-local function ResolvePath(root, path)
-    local node = root
-    for _, name in ipairs(path) do
-        if typeof(node) ~= "Instance" then return nil, name end
-        local child = node:FindFirstChild(name)
-        if not child then return nil, name end
-        node = child
-    end
-    return node
-end
-
-local _invLoadWarned = false
-local _invTilesWarned = false
-
-local function LoadInventoryModules()
-    if InvModules.Ready then return true end
-
-    local RS = game:GetService("ReplicatedStorage")
-    local paths = {
-        Inventory   = { "Controllers", "UI", "Inventory" },
-        ItemConfig  = { "ItemConfig" },
-        ItemService = { "ItemReplicationService" },
-        KEYS        = { "ItemReplicationService", "KEYS" },
-    }
-
-    local nodes = {}
-    for key, path in pairs(paths) do
-        local node, missing = ResolvePath(RS, path)
-        if not node then
-            if not _invLoadWarned then
-                _invLoadWarned = true
-                warn("[DracoHub][Inventory] Khong tim thay RS." .. table.concat(path, ".") .. " (thieu '" .. tostring(missing) .. "')")
-            end
-            return false
-        end
-        nodes[key] = node
-    end
-
-    local candidates = _setidentity and {2, 8, false} or {false}
-    local lastErr
-
-    for _, ident in ipairs(candidates) do
-        local prev = RaiseIdentity()
-        if ident and _setidentity then pcall(_setidentity, ident) end
-
-        local ok, err = pcall(function()
-            InvModules.Inventory   = require(nodes.Inventory)
-            InvModules.ItemConfig  = require(nodes.ItemConfig)
-            InvModules.ItemService = require(nodes.ItemService)
-            InvModules.KEYS        = require(nodes.KEYS)
-        end)
-
-        RestoreIdentity(prev)
-
-        if ok and type(InvModules.Inventory) == "table" and type(InvModules.ItemService) == "table" then
-            InvModules.Ready = true
-            warn("[DracoHub][Inventory] ✅ Load modules thành công!")
-            return true
-        end
-
-        lastErr = err
-        InvModules.Inventory, InvModules.ItemConfig = nil, nil
-        InvModules.ItemService, InvModules.KEYS = nil, nil
-    end
-
-    if not _invLoadWarned then
-        _invLoadWarned = true
-        warn("[DracoHub][Inventory] require that bai: " .. tostring(lastErr))
-    end
-    return false
-end
+local Inventory = require(ReplicatedStorage.Controllers.UI.Inventory)
+local ItemConfig = require(ReplicatedStorage.ItemConfig)
+local ItemService = require(ReplicatedStorage.ItemReplicationService)
+local KEYS = require(ReplicatedStorage.ItemReplicationService.KEYS)
 
 local function InventoryModulesInitialized()
-    if not InvModules.Ready then return false end
     local ok, res = pcall(function()
-        return InvModules.Inventory:GetIfInitialized() and InvModules.ItemService.IsInitialized == true
+        return Inventory:GetIfInitialized() and ItemService.IsInitialized == true
     end)
     return ok and res == true
 end
 
 local function _RefreshInventoryInner()
-    if not LoadInventoryModules() then
-        _invFailCount = _invFailCount + 1
-        return
-    end
-
+    -- Đợi initialized
     if not InventoryModulesInitialized() then
         _invFailCount = _invFailCount + 1
         return
     end
 
-    local Inventory   = InvModules.Inventory
-    local ItemConfig  = InvModules.ItemConfig
-    local ItemService = InvModules.ItemService
-    local KEYS        = InvModules.KEYS
-
+    -- Lấy amounts
     local amounts = {}
     local okQty, qtyList = pcall(function() return ItemService:GetItems(KEYS.QUANTITY) end)
     if okQty and type(qtyList) == "table" then
@@ -405,17 +322,14 @@ local function _RefreshInventoryInner()
         end
     end
 
+    -- Lấy tiles
     local okTiles, tiles = pcall(function() return Inventory:GetTiles() end)
     if not okTiles or type(tiles) ~= "table" then
-        if not _invTilesWarned then
-            _invTilesWarned = true
-            warn("[DracoHub][Inventory] GetTiles that bai: " .. tostring(tiles))
-        end
         _invFailCount = _invFailCount + 1
         return
     end
-    _invTilesWarned = false
 
+    -- Parse backpack
     local backpack, seen, total = {}, {}, 0
 
     for _, tile in pairs(tiles) do
