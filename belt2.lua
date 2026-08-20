@@ -88,6 +88,7 @@ local Player = game.Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Uzoth_CFrame = CFrame.new(5661.898, 1210.877, 863.176)
 local Trade_CFrame = CFrame.new(-12596.668, 336.671, -7556.832)
 local Wizard_CFrame = CFrame.new(5773.936035, 1209.442871, 809.224548)
