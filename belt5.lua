@@ -7,89 +7,84 @@ if not NhapKey or NhapKey == "" then
     return
 end
 warn("[DracoHub] ✅ Key nhận được: " .. string.sub(NhapKey, 1, 6) .. "***")
-
 -- ==========================================
--- [ PHẦN 0 : CHỌN TEAM & ĐỢI GAME LOAD ] — TỐI ƯU CHỐNG TREO
+-- [ PHẦN 0 : CHỌN TEAM & ĐỢI GAME LOAD ] ← ĐÃ TỐI ƯU
 -- ==========================================
 getgenv().Team = getgenv().Team or "Marines"
 getgenv().fragment = getgenv().fragment ~= false and true or false
-
 if not game:IsLoaded() then game.Loaded:Wait() end
-
--- Đợi Player và dữ liệu cơ bản
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-repeat task.wait() until Player
-
--- Hàm Join Team tối ưu
+repeat task.wait() until game.Players.LocalPlayer
+repeat task.wait() until game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+-- ==================== JOIN TEAM TỐI ƯU ====================
 local function JoinTeam()
-    if Player.Team ~= nil then return true end
-    
-    local CommF = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommF_", 10)
-    if CommF then
-        pcall(function()
-            CommF:InvokeServer("SetTeam", getgenv().Team)
-        end)
+    local player = game.Players.LocalPlayer
+    if player.Team ~= nil then
+        warn("[DracoHub] ✅ Đã có team: " .. player.Team.Name)
+        return true
     end
-    
-    -- Nếu InvokeServer không xong ngay, thử đợi thêm 1 chút
-    local t = tick()
-    while Player.Team == nil and (tick() - t) < 10 do
-        task.wait(0.5)
-        -- Kiểm tra UI nếu Remote không hoạt động
-        local MainUI = Player:FindFirstChild("PlayerGui") and Player.PlayerGui:FindFirstChild("Main")
-        if MainUI and MainUI:FindFirstChild("ChooseTeam") then
-            local container = MainUI.ChooseTeam:FindFirstChild("Container")
-            if container and container:FindFirstChild(getgenv().Team) then
-                local btn = container[getgenv().Team].Frame.TextButton
-                local x = btn.AbsolutePosition.X + btn.AbsoluteSize.X / 2
-                local y = btn.AbsolutePosition.Y + btn.AbsoluteSize.Y / 2
-                game:GetService("VirtualInputManager"):SendMouseButtonEvent(x, y, 0, true, game, 1)
-                task.wait(0.1)
-                game:GetService("VirtualInputManager"):SendMouseButtonEvent(x, y, 0, false, game, 1)
-            end
+    warn("[DracoHub] Đang join team:", getgenv().Team)
+    local success = pcall(function()
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("SetTeam", getgenv().Team)
+    end)
+    if success then
+        warn("[DracoHub] ✅ Join team thành công bằng Remote")
+        task.wait(1.5)
+        return true
+    end
+    warn("[DracoHub] Remote thất bại, thử click UI...")
+    repeat task.wait(0.5) until player.PlayerGui:FindFirstChild("Main")
+    for _, v in pairs(player.PlayerGui:GetChildren()) do
+        if v.Name:find("Main") and v:FindFirstChild("ChooseTeam") then
+            pcall(function()
+                local container = v.ChooseTeam.Container
+                if container and container:FindFirstChild(getgenv().Team) then
+                    local btn = container[getgenv().Team].Frame.TextButton
+                    local vim = game:GetService("VirtualInputManager")
+                    local x = btn.AbsolutePosition.X + btn.AbsoluteSize.X / 2
+                    local y = btn.AbsolutePosition.Y + btn.AbsoluteSize.Y / 2
+                    vim:SendMouseButtonEvent(x, y, 0, true, game, 1)
+                    task.wait(0.1)
+                    vim:SendMouseButtonEvent(x, y, 0, false, game, 1)
+                    warn("[DracoHub] Đã click button team:", getgenv().Team)
+                end
+            end)
         end
     end
+    task.wait(2)
 end
-
--- Chạy JoinTeam trong luồng riêng để không chặn script
-task.spawn(JoinTeam)
-
--- Chỉ đợi tối đa 15s cho phần Team, sau đó bắt buộc chạy tiếp logic
-local waitStart = tick()
-repeat task.wait(0.5) until (Player.Team ~= nil) or (tick() - waitStart > 15)
-
-warn("[DracoHub] ✅ Tiếp tục thực thi logic chính...")
-
--- Đợi Character để đảm bảo các hàm Tween/Teleport hoạt động
-if not Player.Character or not Player.Character:FindFirstChild("HumanoidRootPart") then
-    Player.CharacterAdded:Wait()
-end
-repeat task.wait() until Player.Character:FindFirstChild("HumanoidRootPart")
-task.wait(1)
-
+JoinTeam()
+repeat task.wait(0.3) until game.Players.LocalPlayer.Team ~= nil
+task.wait(1.5)
+warn("[DracoHub] ✅ Đã join team:", game.Players.LocalPlayer.Team.Name)
 -- ==========================================
--- [ PHẦN 0.5 : CHECK SEA ]
+repeat task.wait() until game.Players.LocalPlayer.Character
+    and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+task.wait(2)
 -- ==========================================
-local function GetCurrentSea()
-    local map = workspace:FindFirstChild("MAP")
-    if map then
-        return tonumber(map:GetAttribute("MAP"))
-    end
-    return 1
-end
-
-if GetCurrentSea() < 3 then
-    warn("[DracoHub] Đang ở Sea thấp → Travel đến Sea 3...")
-    pcall(function() 
-        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelZou") 
+-- [ PHẦN 0.5 : CHECK SEA → AUTO TRAVEL SEA 3 ]
+-- ==========================================
+local function CheckSea(seaNum)
+    local ok, result = pcall(function()
+        return seaNum == tonumber(workspace:GetAttribute("MAP"):match("%d+"))
     end)
-    return
+    return ok and result
 end
-
+local CommF_Travel = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommF_")
+if CheckSea(1) then
+    warn("[DracoHub] Đang ở Sea 1 → Travel đến Sea 3...")
+    pcall(function() CommF_Travel:InvokeServer("TravelZou") end)
+    return
+elseif CheckSea(2) then
+    warn("[DracoHub] Đang ở Sea 2 → Travel đến Sea 3...")
+    pcall(function() CommF_Travel:InvokeServer("TravelZou") end)
+    return
+else
+    warn("[DracoHub] ✅ Đã ở Sea 3! Tiếp tục script...")
+end
 -- ==========================================
--- [ PHẦN 1 ] LÕI LOGIC (CORE) 
+-- [ PHẦN 1 ] LÕI LOGIC (CORE) ← Giữ nguyên từ đây trở xuống
 -- ==========================================
+local Player = game.Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -264,22 +259,262 @@ task.spawn(function()
         task.wait(5)
     end
 end)
--- BỘ CÔNG CỤ XỬ LÝ INVENTORY
-local _lastValidInv = nil; local _invFailCount = 0
-local function GetInventoryData()
-    local ok, inv = pcall(function() return game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("getInventory") end)
-    if ok and type(inv) == "table" and next(inv) ~= nil then _lastValidInv = inv; _invFailCount = 0; return inv, true end
-    _invFailCount = _invFailCount + 1
-    if _lastValidInv ~= nil then return _lastValidInv, false end
-    return {}, false
+-- ============================================================
+-- BỘ CÔNG CỤ XỬ LÝ INVENTORY (CẬP NHẬT MỚI - HỖ TRỢ MIRROR FRACTAL)
+-- Sử dụng ItemReplicationService thay vì CommF_ getInventory
+-- ============================================================
+local _invFailCount = 0
+local ConChoChisiti36 = { Backpack = {} }
+
+-- ============================================================
+-- THREAD IDENTITY - Để tránh lỗi khi require module game
+-- ============================================================
+local _setidentity = setthreadidentity or setidentity or set_thread_identity or (syn and syn.set_thread_identity)
+local _getidentity = getthreadidentity or getidentity or get_thread_identity or (syn and syn.get_thread_identity)
+
+local function RaiseIdentity()
+    if not _setidentity then return nil end
+    local prev
+    if _getidentity then
+        local ok, v = pcall(_getidentity)
+        if ok then prev = v end
+    end
+    pcall(_setidentity, 8)
+    return prev
 end
+
+local function RestoreIdentity(prev)
+    if not _setidentity then return end
+    pcall(_setidentity, prev or 8)
+end
+
+-- ============================================================
+-- INVENTORY MODULES - Load từ game
+-- ============================================================
+local InvModules = {
+    Inventory   = nil,
+    ItemConfig  = nil,
+    ItemService = nil,
+    KEYS        = nil,
+    Ready       = false,
+}
+
+local function ResolvePath(root, path)
+    local node = root
+    for _, name in ipairs(path) do
+        if typeof(node) ~= "Instance" then return nil, name end
+        local child = node:FindFirstChild(name)
+        if not child then return nil, name end
+        node = child
+    end
+    return node
+end
+
+local _invLoadWarned = false
+local _invTilesWarned = false
+
+local function LoadInventoryModules()
+    if InvModules.Ready then return true end
+
+    local RS = game:GetService("ReplicatedStorage")
+    local paths = {
+        Inventory   = { "Controllers", "UI", "Inventory" },
+        ItemConfig  = { "ItemConfig" },
+        ItemService = { "ItemReplicationService" },
+        KEYS        = { "ItemReplicationService", "KEYS" },
+    }
+
+    local nodes = {}
+    for key, path in pairs(paths) do
+        local node, missing = ResolvePath(RS, path)
+        if not node then
+            if not _invLoadWarned then
+                _invLoadWarned = true
+                warn("[DracoHub][Inventory] Khong tim thay RS." .. table.concat(path, ".") .. " (thieu '" .. tostring(missing) .. "')")
+            end
+            return false
+        end
+        nodes[key] = node
+    end
+
+    local candidates = _setidentity and {2, 8, false} or {false}
+    local lastErr
+
+    for _, ident in ipairs(candidates) do
+        local prev = RaiseIdentity()
+        if ident and _setidentity then pcall(_setidentity, ident) end
+
+        local ok, err = pcall(function()
+            InvModules.Inventory   = require(nodes.Inventory)
+            InvModules.ItemConfig  = require(nodes.ItemConfig)
+            InvModules.ItemService = require(nodes.ItemService)
+            InvModules.KEYS        = require(nodes.KEYS)
+        end)
+
+        RestoreIdentity(prev)
+
+        if ok and type(InvModules.Inventory) == "table" and type(InvModules.ItemService) == "table" then
+            InvModules.Ready = true
+            warn("[DracoHub][Inventory] ✅ Load modules thành công!")
+            return true
+        end
+
+        lastErr = err
+        InvModules.Inventory, InvModules.ItemConfig = nil, nil
+        InvModules.ItemService, InvModules.KEYS = nil, nil
+    end
+
+    if not _invLoadWarned then
+        _invLoadWarned = true
+        warn("[DracoHub][Inventory] require that bai: " .. tostring(lastErr))
+    end
+    return false
+end
+
+local function InventoryModulesInitialized()
+    if not InvModules.Ready then return false end
+    local ok, res = pcall(function()
+        return InvModules.Inventory:GetIfInitialized() and InvModules.ItemService.IsInitialized == true
+    end)
+    return ok and res == true
+end
+
+local function _RefreshInventoryInner()
+    if not LoadInventoryModules() then
+        _invFailCount = _invFailCount + 1
+        return
+    end
+
+    if not InventoryModulesInitialized() then
+        _invFailCount = _invFailCount + 1
+        return
+    end
+
+    local Inventory   = InvModules.Inventory
+    local ItemConfig  = InvModules.ItemConfig
+    local ItemService = InvModules.ItemService
+    local KEYS        = InvModules.KEYS
+
+    local amounts = {}
+    local okQty, qtyList = pcall(function() return ItemService:GetItems(KEYS.QUANTITY) end)
+    if okQty and type(qtyList) == "table" then
+        for _, item in pairs(qtyList) do
+            if type(item) == "table" and item.ItemId then
+                amounts[item.ItemId] = (amounts[item.ItemId] or 0) + (tonumber(item.Value) or 0)
+            end
+        end
+    end
+
+    local okTiles, tiles = pcall(function() return Inventory:GetTiles() end)
+    if not okTiles or type(tiles) ~= "table" then
+        if not _invTilesWarned then
+            _invTilesWarned = true
+            warn("[DracoHub][Inventory] GetTiles that bai: " .. tostring(tiles))
+        end
+        _invFailCount = _invFailCount + 1
+        return
+    end
+    _invTilesWarned = false
+
+    local backpack, seen, total = {}, {}, 0
+
+    for _, tile in pairs(tiles) do
+        local id = type(tile) == "table" and tile.ItemId or nil
+
+        if id and not seen[id] then
+            seen[id] = true
+
+            local okCfg, config = pcall(function() return ItemConfig.match(id):unwrap() end)
+
+            if okCfg and type(config) == "table" and config.Display then
+                local name = config.Display.Name or (config.Index and config.Index.StorageKey) or tostring(id)
+
+                backpack[tostring(name)] = {
+                    Name     = tostring(name),
+                    Count    = amounts[id] or 1,
+                    Category = config.Display.Category,
+                    ItemId   = id,
+                }
+                total = total + 1
+            end
+        end
+    end
+
+    if total > 0 then
+        ConChoChisiti36.Backpack = backpack
+        _invFailCount = 0
+    else
+        _invFailCount = _invFailCount + 1
+    end
+end
+
+local function RefreshInventory()
+    local prev = RaiseIdentity()
+    local ok, err = pcall(_RefreshInventoryInner)
+    RestoreIdentity(prev)
+    if not ok then
+        warn("[DracoHub][Inventory] RefreshInventory loi: " .. tostring(err))
+        _invFailCount = _invFailCount + 1
+    end
+end
+
+-- ============================================================
+-- WRAPPER FUNCTIONS - Tương thích với code cũ
+-- ============================================================
+local function GetInventoryData()
+    -- Trả về (data, isValid) như cũ để không phá logic
+    -- data là ConChoChisiti36.Backpack, isValid dựa vào _invFailCount
+    RefreshInventory()
+
+    if _invFailCount > 0 and _invFailCount <= 3 then
+        return ConChoChisiti36.Backpack, false
+    end
+
+    if _invFailCount > 3 then
+        return ConChoChisiti36.Backpack, false
+    end
+
+    return ConChoChisiti36.Backpack, true
+end
+
 local function CheckItemInInv(invData, itemName)
+    -- invData bây giờ là ConChoChisiti36.Backpack
+    -- Giữ nguyên signature 2 params để không phá code
     local p = game.Players.LocalPlayer
+
+    -- Kiểm tra Character và Backpack trước (giữ nguyên logic cũ)
     if p.Character and p.Character:FindFirstChild(itemName) then return true, 1 end
-    local bp = p:FindFirstChild("Backpack"); if bp and bp:FindFirstChild(itemName) then return true, 1 end
-    for _, v in pairs(invData) do if type(v) == "table" and v.Name == itemName then return true, (v.Count or 1) end end
+    local bp = p:FindFirstChild("Backpack")
+    if bp and bp:FindFirstChild(itemName) then return true, 1 end
+
+    -- Kiểm tra trong ConChoChisiti36.Backpack (system mới)
+    local item = ConChoChisiti36.Backpack[itemName]
+    if item then
+        return true, item.Count or 1
+    end
+
     return false, 0
 end
+
+-- ============================================================
+-- AUTO REFRESH khi có item event
+-- ============================================================
+pcall(function()
+    local CommE = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CommE")
+    CommE.OnClientEvent:Connect(function(...)
+        local t = {...}
+        if type(t[1]) == "string" and t[1]:find("Item") then
+            task.spawn(RefreshInventory)
+        end
+    end)
+end)
+
+-- Load inventory lần đầu
+task.spawn(function()
+    task.wait(3)
+    RefreshInventory()
+    warn("[DracoHub][Inventory] ✅ Khởi động inventory system")
+end)
 -- ==========================================
 -- BỘ XỬ LÝ FILE JSON
 -- ==========================================
